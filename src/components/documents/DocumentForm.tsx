@@ -5,6 +5,8 @@ import type { Document } from '../../hooks/useDocuments';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { DocumentPDF } from '../../lib/pdfEngine/DocumentPDF';
 import { useSettings } from '../../hooks/useSettings';
+import { useProperties } from '../../hooks/useProperties';
+import { differenceInDays, parseISO } from 'date-fns';
 
 export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void, initialDoc?: Document | null }) {
     const { createDocument, updateDocument } = useDocuments();
@@ -16,6 +18,12 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
     const [clientEmail, setClientEmail] = useState(initialDoc?.clientEmail || '');
     const [reference, setReference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
     const [issueDate, setIssueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
+    const [checkIn, setCheckIn] = useState(initialDoc?.checkIn || '');
+    const [checkOut, setCheckOut] = useState(initialDoc?.checkOut || '');
+    const { properties } = useProperties();
+    const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' } | null>(null);
+
+    const nights = (checkIn && checkOut) ? Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn))) : 0;
 
     const [lineItems, setLineItems] = useState<any[]>(
         initialDoc?.lineItems && initialDoc.lineItems.length > 0
@@ -59,6 +67,8 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
                 client_email: clientEmail,
                 amount: subtotal,
                 issue_date: issueDate,
+                check_in: checkIn || null,
+                check_out: checkOut || null,
                 line_items: lineItems
             });
             errorMsg = error;
@@ -71,6 +81,8 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
                 amount: subtotal,
                 status: 'pending',
                 issue_date: issueDate,
+                check_in: checkIn || null,
+                check_out: checkOut || null,
                 line_items: lineItems
             });
             errorMsg = error;
@@ -164,17 +176,8 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
 
                         {/* Document Details */}
                         <div className="space-y-4">
-                            <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Document Info</h3>
+                            <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Document Details</h3>
                             <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-medium text-slate-700">Reference Number</label>
-                                    <input
-                                        type="text"
-                                        value={reference}
-                                        onChange={(e) => setReference(e.target.value)}
-                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                    />
-                                </div>
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-medium text-slate-700">Issue Date</label>
                                     <input
@@ -184,86 +187,191 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
                                         className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 cursor-pointer"
                                     />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-medium text-slate-700">Check-in Date</label>
+                                        <input
+                                            type="date"
+                                            value={checkIn}
+                                            onChange={(e) => setCheckIn(e.target.value)}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 cursor-pointer"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-medium text-slate-700">Check-out Date</label>
+                                        <input
+                                            type="date"
+                                            value={checkOut}
+                                            onChange={(e) => setCheckOut(e.target.value)}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    {/* Line Items */}
-                    <div className="mt-10 space-y-4">
-                        <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Line Items</h3>
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                <div className="col-span-6">Description</div>
-                                <div className="col-span-2">Quantity</div>
-                                <div className="col-span-2">Unit Price</div>
-                                <div className="col-span-2 text-right">Amount</div>
-                            </div>
+            {/* Line Items */}
+            <div className="mt-10 space-y-4">
+                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Line Items</h3>
+                <div className="space-y-3">
+                    <div className="grid grid-cols-12 gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        <div className="col-span-6">Description</div>
+                        <div className="col-span-2">Quantity</div>
+                        <div className="col-span-2">Unit Price</div>
+                        <div className="col-span-2 text-right">Amount</div>
+                    </div>
 
-                            {lineItems.map((item) => (
-                                <div key={item.id} className="grid grid-cols-12 gap-3 items-center bg-slate-50 p-2 pl-4 rounded-xl border border-slate-100">
-                                    <div className="col-span-6">
-                                        <input
-                                            type="text"
-                                            value={item.description}
-                                            onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
-                                            className="w-full bg-transparent border-none focus:outline-none focus:ring-0 p-0 font-medium text-slate-900 placeholder:text-slate-400 text-sm"
-                                            placeholder="Enter description"
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
+                    {lineItems.map((item) => (
+                        <div key={item.id} className="relative bg-slate-50 p-2 pl-4 rounded-xl border border-slate-100">
+                            <div className="grid grid-cols-12 gap-3 items-center">
+                                <div className="col-span-6 relative">
+                                    <input
+                                        type="text"
+                                        value={item.description}
+                                        onFocus={() => setActiveSelection({ id: item.id, type: 'category' })}
+                                        onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
+                                        className="w-full bg-transparent border-none focus:outline-none focus:ring-0 p-0 font-medium text-slate-900 placeholder:text-slate-400 text-sm"
+                                        placeholder="Enter description"
+                                    />
+
+                                    {/* Category Selection Dropdown */}
+                                    {activeSelection?.id === item.id && activeSelection?.type === 'category' && (
+                                        <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="p-2 border-b border-slate-50">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Select Category</span>
+                                            </div>
+                                            <div className="p-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveSelection({ id: item.id, type: 'hotel' });
+                                                    }}
+                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                >
+                                                    <span className="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center text-xs group-hover:bg-amber-100 italic font-serif">H</span>
+                                                    Hotels
+                                                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateLineItem(item.id, 'description', 'Transport: ');
+                                                        setActiveSelection(null);
+                                                    }}
+                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                >
+                                                    <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs group-hover:bg-blue-100">🚗</span>
+                                                    Transport
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateLineItem(item.id, 'description', 'Activity: ');
+                                                        setActiveSelection(null);
+                                                    }}
+                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                >
+                                                    <span className="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center text-xs group-hover:bg-rose-100">🧗</span>
+                                                    Activities
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hotel Selection Dropdown */}
+                                    {activeSelection?.id === item.id && activeSelection?.type === 'hotel' && (
+                                        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="p-2 border-b border-slate-50 flex items-center justify-between">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Pick a Hotel</span>
+                                                <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveSelection({ id: item.id, type: 'category' });
+                                                }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
+                                            </div>
+                                            <div className="p-1 max-h-64 overflow-y-auto">
+                                                {properties.length === 0 ? (
+                                                    <div className="p-4 text-center text-slate-400 text-xs italic">No hotels found. Add some in Properties first.</div>
+                                                ) : (
+                                                    properties.map(hotel => (
+                                                        <button
+                                                            key={hotel.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const desc = `${hotel.name} (${nights} nights)`;
+                                                                setLineItems(lineItems.map(li =>
+                                                                    li.id === item.id
+                                                                        ? { ...li, description: desc, quantity: nights || 1, unitPrice: hotel.base_price }
+                                                                        : li
+                                                                ));
+                                                                setActiveSelection(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                                        >
+                                                            <div className="font-semibold text-slate-900">{hotel.name}</div>
+                                                            <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • ${hotel.base_price}/night</div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="col-span-2">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={(e) => updateLineItem(item.id, 'quantity', Number(e.target.value))}
+                                        className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
                                         <input
                                             type="number"
-                                            min="1"
-                                            value={item.quantity}
-                                            onChange={(e) => updateLineItem(item.id, 'quantity', Number(e.target.value))}
-                                            className="w-20 bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
+                                            min="0"
+                                            step="0.01"
+                                            value={item.unitPrice}
+                                            onChange={(e) => updateLineItem(item.id, 'unitPrice', Number(e.target.value))}
+                                            className="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
                                         />
                                     </div>
-                                    <div className="col-span-2">
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                step="0.01"
-                                                value={item.unitPrice}
-                                                onChange={(e) => updateLineItem(item.id, 'unitPrice', Number(e.target.value))}
-                                                className="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="col-span-2 flex items-center justify-end gap-3 pr-2">
-                                        <span className="font-semibold text-slate-900 text-sm">
-                                            ${(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </span>
-                                        <button
-                                            onClick={() => removeLineItem(item.id)}
-                                            disabled={lineItems.length === 1}
-                                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
                                 </div>
-                            ))}
-
-                            <button onClick={addLineItem} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-brand-600 hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center justify-center gap-2 font-medium text-sm mt-4">
-                                <Plus className="w-4 h-4" />
-                                Add Line Item
-                            </button>
-                        </div>
-
-                        <div className="flex justify-end pt-6">
-                            <div className="w-64 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                <div className="flex justify-between text-sm font-medium text-slate-600">
-                                    <span>Subtotal</span>
-                                    <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex justify-between text-base font-bold text-slate-900 border-t border-slate-200 pt-3">
-                                    <span>Total Amount</span>
-                                    <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <div className="col-span-2 flex items-center justify-end gap-3 pr-2">
+                                    <span className="font-semibold text-slate-900 text-sm">
+                                        ${(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                    <button
+                                        onClick={() => removeLineItem(item.id)}
+                                        disabled={lineItems.length === 1}
+                                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
+                        </div>
+                    ))}
+
+                    <button onClick={addLineItem} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-brand-600 hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center justify-center gap-2 font-medium text-sm mt-4">
+                        <Plus className="w-4 h-4" />
+                        Add Line Item
+                    </button>
+                </div>
+
+                <div className="flex justify-end pt-6">
+                    <div className="w-64 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="flex justify-between text-sm font-medium text-slate-600">
+                            <span>Subtotal</span>
+                            <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-base font-bold text-slate-900 border-t border-slate-200 pt-3">
+                            <span>Total Amount</span>
+                            <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
                 </div>

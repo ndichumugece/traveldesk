@@ -11,6 +11,8 @@ export interface Document {
     amount: number;
     status: string;
     date: string;
+    checkIn?: string;
+    checkOut?: string;
     lineItems: any[];
     createdBy?: string;
     createdByEmail?: string;
@@ -49,6 +51,8 @@ export function useDocuments() {
                         amount: Number(doc.amount) || 0,
                         status: doc.status || 'pending',
                         date: dateStr,
+                        checkIn: doc.check_in || '',
+                        checkOut: doc.check_out || '',
                         lineItems: doc.line_items || [],
                         createdBy: doc.profiles?.full_name || 'Unknown User',
                         createdByEmail: doc.profiles?.email || ''
