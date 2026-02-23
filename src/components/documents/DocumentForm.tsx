@@ -6,6 +6,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { DocumentPDF } from '../../lib/pdfEngine/DocumentPDF';
 import { useSettings } from '../../hooks/useSettings';
 import { useProperties } from '../../hooks/useProperties';
+import { useActivities } from '../../hooks/useActivities';
 import { differenceInDays, parseISO } from 'date-fns';
 
 export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void, initialDoc?: Document | null }) {
@@ -16,12 +17,13 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
     // Form State
     const [clientName, setClientName] = useState(initialDoc?.client || '');
     const [clientEmail, setClientEmail] = useState(initialDoc?.clientEmail || '');
-    const [reference, setReference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
+    const [reference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
     const [issueDate, setIssueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
     const [checkIn, setCheckIn] = useState(initialDoc?.checkIn || '');
     const [checkOut, setCheckOut] = useState(initialDoc?.checkOut || '');
     const { properties } = useProperties();
-    const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' } | null>(null);
+    const { activities } = useActivities();
+    const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' | 'activity' } | null>(null);
 
     const nights = (checkIn && checkOut) ? Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn))) : 0;
 
@@ -269,13 +271,13 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        updateLineItem(item.id, 'description', 'Activity: ');
-                                                        setActiveSelection(null);
+                                                        setActiveSelection({ id: item.id, type: 'activity' });
                                                     }}
                                                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
                                                 >
                                                     <span className="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center text-xs group-hover:bg-rose-100">🧗</span>
                                                     Activities
+                                                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
                                                 </button>
                                             </div>
                                         </div>
@@ -312,6 +314,44 @@ export function DocumentForm({ onDiscard, initialDoc }: { onDiscard: () => void,
                                                         >
                                                             <div className="font-semibold text-slate-900">{hotel.name}</div>
                                                             <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • ${hotel.base_price}/night</div>
+                                                        </button>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Activity Selection Dropdown */}
+                                    {activeSelection?.id === item.id && activeSelection?.type === 'activity' && (
+                                        <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="p-2 border-b border-slate-50 flex items-center justify-between">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Pick an Activity</span>
+                                                <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActiveSelection({ id: item.id, type: 'category' });
+                                                }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
+                                            </div>
+                                            <div className="p-1 max-h-64 overflow-y-auto">
+                                                {activities.length === 0 ? (
+                                                    <div className="p-4 text-center text-slate-400 text-xs italic">No activities found. Add some in Activities first.</div>
+                                                ) : (
+                                                    activities.map(activity => (
+                                                        <button
+                                                            key={activity.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const desc = `Activity: ${activity.name}`;
+                                                                setLineItems(lineItems.map(li =>
+                                                                    li.id === item.id
+                                                                        ? { ...li, description: desc, quantity: 1, unitPrice: activity.price }
+                                                                        : li
+                                                                ));
+                                                                setActiveSelection(null);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                                        >
+                                                            <div className="font-semibold text-slate-900">{activity.name}</div>
+                                                            <div className="text-[10px] text-slate-500 font-normal">{activity.location} • ${activity.price}</div>
                                                         </button>
                                                     ))
                                                 )}
