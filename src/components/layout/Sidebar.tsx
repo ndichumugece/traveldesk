@@ -11,6 +11,7 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     X,
+    Settings2,
 } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { cn } from '../../lib/utils';
@@ -36,6 +37,14 @@ const navigation: NavItem[] = [
             { name: 'Quotation Voucher', href: '/invoices?type=quotation', icon: FileText },
         ]
     },
+    {
+        name: 'Configuration',
+        icon: Settings2,
+        subItems: [
+            { name: 'Transport', href: '/transport' },
+            { name: 'Activities', href: '/activities' },
+        ]
+    },
     { name: 'Users', href: '/users', icon: Users },
 ];
 
@@ -58,7 +67,15 @@ function SidebarContent({
     isMobile?: boolean;
 }) {
     const { user, signOut } = useAuth();
-    const [isBookingsOpen, setIsBookingsOpen] = useState(true);
+    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+        'Bookings': true,
+        'Configuration': true,
+    });
+
+    const toggleMenu = (name: string) => {
+        if (collapsed && !isMobile) return;
+        setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }));
+    };
 
     // On mobile sidebar, treat as always expanded
     const isCollapsed = isMobile ? false : collapsed;
@@ -90,11 +107,12 @@ function SidebarContent({
 
             {/* Navigation */}
             <nav className="flex flex-1 flex-col gap-1 p-3 overflow-y-auto overflow-x-hidden">
-                {navigation.map((item) =>
-                    item.subItems ? (
+                {navigation.map((item) => {
+                    const isOpen = openMenus[item.name];
+                    return item.subItems ? (
                         <div key={item.name} className="flex flex-col gap-1">
                             <button
-                                onClick={() => !isCollapsed && setIsBookingsOpen(!isBookingsOpen)}
+                                onClick={() => toggleMenu(item.name)}
                                 title={isCollapsed ? item.name : undefined}
                                 className={cn(
                                     'flex items-center w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ease-in-out group',
@@ -102,17 +120,17 @@ function SidebarContent({
                                     isCollapsed ? 'justify-center' : 'justify-between'
                                 )}>
                                 <div className={cn('flex items-center', isCollapsed ? '' : 'gap-3')}>
-                                    <item.icon className={cn('h-5 w-5 shrink-0', isBookingsOpen && !isCollapsed ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
+                                    <item.icon className={cn('h-5 w-5 shrink-0', isOpen && !isCollapsed ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-600')} />
                                     {!isCollapsed && <span>{item.name}</span>}
                                 </div>
                                 {!isCollapsed && (
-                                    isBookingsOpen
+                                    isOpen
                                         ? <ChevronUp className="h-4 w-4 text-slate-400" />
                                         : <ChevronDown className="h-4 w-4 text-slate-400" />
                                 )}
                             </button>
 
-                            {isBookingsOpen && !isCollapsed && (
+                            {isOpen && !isCollapsed && (
                                 <div className="flex flex-col mt-1 mb-1" style={{ borderLeft: '2px solid #cbd5e1', marginLeft: '34px' }}>
                                     {item.subItems.map((subItem) => (
                                         <div key={subItem.name} className="flex items-center">
@@ -150,8 +168,8 @@ function SidebarContent({
                             <item.icon className="h-5 w-5 shrink-0" />
                             {!isCollapsed && item.name}
                         </NavLink>
-                    )
-                )}
+                    );
+                })}
             </nav>
 
             {/* User / Sign-out */}

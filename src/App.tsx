@@ -8,6 +8,8 @@ import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Onboarding } from './pages/Onboarding';
+import { Transport } from './pages/Transport';
+import { Activities } from './pages/Activities';
 import { AuthProvider } from './lib/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 
@@ -34,6 +36,8 @@ function App() {
             <Route path="properties" element={<Properties />} />
             <Route path="invoices" element={<Documents />} />
             <Route path="users" element={<Users />} />
+            <Route path="transport" element={<Transport />} />
+            <Route path="activities" element={<Activities />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
