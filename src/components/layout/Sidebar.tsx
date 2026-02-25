@@ -31,10 +31,10 @@ const navigation: NavItem[] = [
         name: 'Bookings',
         icon: FolderOpen,
         subItems: [
-            { name: 'Invoices', href: '/invoices', icon: FileText },
-            { name: 'Confirmation Voucher', href: '/invoices?type=confirmation', icon: FileText },
-            { name: 'Booking Voucher', href: '/invoices?type=booking', icon: FileText },
-            { name: 'Quotation Voucher', href: '/invoices?type=quotation', icon: FileText },
+            { name: 'Invoices', href: '/invoice', icon: FileText },
+            { name: 'Confirmation Voucher', href: '/confirmation-voucher', icon: FileText },
+            { name: 'Booking Voucher', href: '/booking-voucher', icon: FileText },
+            { name: 'Quotations', href: '/quotation', icon: FileText },
         ]
     },
     {
@@ -43,6 +43,7 @@ const navigation: NavItem[] = [
         subItems: [
             { name: 'Transport', href: '/transport' },
             { name: 'Activities', href: '/activities' },
+            { name: 'Summertides', href: '/summertides' },
         ]
     },
     { name: 'Users', href: '/users', icon: Users },

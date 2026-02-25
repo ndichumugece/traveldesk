@@ -14,6 +14,7 @@ export interface Document {
     checkIn?: string;
     checkOut?: string;
     lineItems: any[];
+    metadata?: any;
     createdBy?: string;
     createdByEmail?: string;
 }
@@ -54,6 +55,7 @@ export function useDocuments() {
                         checkIn: doc.check_in || '',
                         checkOut: doc.check_out || '',
                         lineItems: doc.line_items || [],
+                        metadata: doc.metadata || {},
                         createdBy: doc.profiles?.full_name || 'Unknown User',
                         createdByEmail: doc.profiles?.email || ''
                     };

@@ -3,14 +3,16 @@ import { Plus, Search, FileText, Loader2 } from 'lucide-react';
 import { useDocuments } from '../../hooks/useDocuments';
 import type { Document } from '../../hooks/useDocuments';
 
-export function DocumentList({ onCreate, onEdit }: { onCreate: () => void, onEdit: (doc: Document) => void }) {
+export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () => void, onEdit: (doc: Document) => void, typeFilter?: string | null }) {
     const [searchTerm, setSearchTerm] = useState('');
     const { documents, loading } = useDocuments();
 
-    const filteredDocs = documents.filter(doc =>
-        doc.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.client.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredDocs = documents.filter(doc => {
+        const matchesSearch = doc.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            doc.client.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = !typeFilter || doc.type === typeFilter;
+        return matchesSearch && matchesType;
+    });
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -24,19 +26,35 @@ export function DocumentList({ onCreate, onEdit }: { onCreate: () => void, onEdi
         }
     };
 
+    const getPageTitle = () => {
+        if (!typeFilter) return 'All Documents';
+        switch (typeFilter) {
+            case 'Voucher': return 'Confirmation Vouchers';
+            case 'Booking': return 'Booking Vouchers';
+            case 'Quotation': return 'Quotations';
+            case 'Invoice': return 'Invoices';
+            default: return typeFilter + 's';
+        }
+    };
+
+    const getCreateLabel = () => {
+        if (!typeFilter) return 'Create Document';
+        return `Create ${typeFilter}`;
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Invoice</h1>
-                    <p className="text-slate-500 mt-1">Manage all your invoices.</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">{getPageTitle()}</h1>
+                    <p className="text-slate-500 mt-1">Manage your {typeFilter ? typeFilter.toLowerCase() + 's' : 'documents'}.</p>
                 </div>
                 <button
                     onClick={onCreate}
                     className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl transition-all duration-150 shadow-sm hover:shadow active:scale-95 font-medium"
                 >
                     <Plus className="w-5 h-5" />
-                    Create Invoice
+                    {getCreateLabel()}
                 </button>
             </div>
 
@@ -46,7 +64,7 @@ export function DocumentList({ onCreate, onEdit }: { onCreate: () => void, onEdi
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search invoices by reference or client..."
+                            placeholder={`Search ${typeFilter ? typeFilter.toLowerCase() + 's' : 'documents'}...`}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 placeholder:text-slate-500"
@@ -117,8 +135,8 @@ export function DocumentList({ onCreate, onEdit }: { onCreate: () => void, onEdi
                 {!loading && filteredDocs.length === 0 && (
                     <div className="p-12 text-center text-slate-500">
                         <FileText className="mx-auto h-12 w-12 text-slate-300 mb-4" />
-                        <p className="text-lg font-medium text-slate-900">No invoices found</p>
-                        <p className="text-sm">Get started by creating a new quotation.</p>
+                        <p className="text-lg font-medium text-slate-900">No {typeFilter ? typeFilter.toLowerCase() + 's' : 'documents'} found</p>
+                        <p className="text-sm">Get started by creating a new {typeFilter ? typeFilter.toLowerCase() : 'quotation'}.</p>
                     </div>
                 )}
             </div>
