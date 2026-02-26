@@ -76,10 +76,12 @@ export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () =>
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</th>
+                                <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Reference</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created By</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client Name</th>
-                                <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                                {typeFilter !== 'Booking' && typeFilter !== 'Voucher' && (
+                                    <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Amount</th>
+                                )}
                                 <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                             </tr>
@@ -87,7 +89,7 @@ export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () =>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="py-12 text-center">
+                                    <td colSpan={typeFilter === 'Booking' || typeFilter === 'Voucher' ? 5 : 6} className="py-12 text-center">
                                         <Loader2 className="w-8 h-8 animate-spin text-brand-600 mx-auto" />
                                     </td>
                                 </tr>
@@ -116,9 +118,11 @@ export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () =>
                                     <td className="py-4 px-6 text-sm text-slate-700">
                                         {doc.client}
                                     </td>
-                                    <td className="py-4 px-6 text-sm font-semibold text-slate-900">
-                                        ${doc.amount.toLocaleString()}
-                                    </td>
+                                    {typeFilter !== 'Booking' && typeFilter !== 'Voucher' && (
+                                        <td className="py-4 px-6 text-sm font-semibold text-slate-900">
+                                            ${doc.amount.toLocaleString()}
+                                        </td>
+                                    )}
                                     <td className="py-4 px-6 text-sm text-slate-500">
                                         {doc.date}
                                     </td>

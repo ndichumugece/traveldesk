@@ -28,11 +28,11 @@ const styles = StyleSheet.create({
     },
     logoArea: {
         width: '50%',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
     },
     logoImage: {
-        maxWidth: 150,
-        maxHeight: 60,
+        maxWidth: 250,
+        maxHeight: 100,
         objectFit: 'contain',
     },
     logoTextPrimary: {
@@ -300,19 +300,6 @@ const styles = StyleSheet.create({
         borderColor: '#e2e8f0',
         borderRadius: 4,
     },
-    welcomeBox: {
-        backgroundColor: '#f1f5f9',
-        padding: 10,
-        borderRadius: 4,
-        marginTop: 10,
-        marginBottom: 20,
-    },
-    welcomeText: {
-        fontSize: 9,
-        fontStyle: 'italic',
-        lineHeight: 1.4,
-        color: '#475569',
-    },
     listSection: {
         marginTop: 10,
         marginBottom: 10,
@@ -346,6 +333,81 @@ const styles = StyleSheet.create({
         fontSize: 8,
         color: '#555555',
         textAlign: 'center',
+    },
+    // Quotation Specific Styles
+    optionCard: {
+        backgroundColor: '#f9fafb',
+        padding: 15,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        marginBottom: 15,
+    },
+    optionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+        paddingBottom: 5,
+    },
+    optionProperty: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#111827',
+    },
+    optionPrice: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#059669',
+    },
+    optionSubheader: {
+        flexDirection: 'row',
+        gap: 15,
+        marginBottom: 6,
+    },
+    optionMeta: {
+        fontSize: 9,
+        color: '#6b7280',
+    },
+    optionDescription: {
+        fontSize: 9,
+        color: '#4b5563',
+        lineHeight: 1.4,
+        marginTop: 4,
+    },
+    inclusionsTitle: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#111827',
+        marginTop: 15,
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        paddingBottom: 4,
+    },
+    inclusionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    inclusionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '30%',
+        marginBottom: 5,
+    },
+    checkIcon: {
+        width: 8,
+        height: 8,
+        backgroundColor: '#059669',
+        borderRadius: 2,
+        marginRight: 6,
+    },
+    inclusionText: {
+        fontSize: 8,
+        color: '#374151',
     }
 });
 
@@ -398,9 +460,6 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         </View>
                     </View>
 
-                    <View style={styles.welcomeBox}>
-                        <Text style={styles.welcomeText}>{metadata?.welcomeMessage}</Text>
-                    </View>
 
                     {/* Main Voucher Content Grid */}
                     <View style={styles.gridContainer}>
@@ -414,7 +473,9 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                                 </View>
                                 <View style={styles.gridItem}>
                                     <Text style={styles.fieldLabel}>Number of Guests</Text>
-                                    <Text style={styles.fieldValue}>{metadata?.numGuests}</Text>
+                                    <Text style={styles.fieldValue}>
+                                        {metadata?.numGuests || (metadata?.rooms?.reduce((acc: number, r: any) => acc + (Number(r.adults) || 0) + (Number(r.children) || 0), 0)) || '0'}
+                                    </Text>
                                 </View>
                                 <View style={styles.gridItem}>
                                     <Text style={styles.fieldLabel}>Date of Arrival</Text>
@@ -442,10 +503,7 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                                             <Text style={styles.fieldLabel}>Package Type</Text>
                                             <Text style={styles.fieldValue}>{metadata?.packageType}</Text>
                                         </View>
-                                        <View style={styles.gridItem}>
-                                            <Text style={styles.fieldLabel}>Number of Rooms</Text>
-                                            <Text style={styles.fieldValue}>{metadata?.numRooms}</Text>
-                                        </View>
+
                                     </>
                                 )}
                             </View>
@@ -479,16 +537,6 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                                 <View style={styles.gridItem}>
                                     <Text style={styles.fieldLabel}>Meal Plan</Text>
                                     <Text style={styles.fieldValue}>{metadata?.mealPlan}</Text>
-                                </View>
-                                <View style={[styles.gridItemFull, styles.statusBox]}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 }}>
-                                        <Text style={styles.fieldLabel}>Amount Paid</Text>
-                                        <Text style={styles.fieldValue}>${metadata?.amountPaid}</Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={styles.fieldLabel}>Balance Due</Text>
-                                        <Text style={[styles.fieldValue, { color: '#dc2626' }]}>${subtotal - metadata?.amountPaid}</Text>
-                                    </View>
                                 </View>
                             </View>
                         </View>
@@ -549,66 +597,107 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         </View>
                     )}
 
-                    {/* Location Info */}
-                    <View style={{ marginTop: 10 }}>
-                        <Text style={styles.sectionTitle}>Property & Location</Text>
-                        <View style={styles.gridContainer}>
-                            <View style={styles.gridItem}>
-                                <Text style={styles.fieldLabel}>Physical Address</Text>
-                                <Text style={styles.fieldValue}>{metadata?.propertyAddress}</Text>
-                            </View>
-                            <View style={styles.gridItem}>
-                                <Text style={styles.fieldLabel}>Google Maps Link</Text>
-                                <Text style={[styles.fieldValue, { color: '#2563eb' }]}>{metadata?.googleMapsLink}</Text>
-                            </View>
-                            <View style={styles.gridItem}>
-                                <Text style={styles.fieldLabel}>Host Contact</Text>
-                                <Text style={styles.fieldValue}>{metadata?.hostContact}</Text>
-                            </View>
-                            <View style={styles.gridItem}>
-                                <Text style={styles.fieldLabel}>Contact Person</Text>
-                                <Text style={styles.fieldValue}>{metadata?.contactPerson}</Text>
-                            </View>
-                        </View>
-                    </View>
+                </Page>
+            </Document>
+        );
+    }
 
-                    {/* Lists */}
-                    <View style={styles.gridContainer}>
-                        <View style={styles.gridItem}>
-                            <Text style={styles.sectionTitle}>What's Included</Text>
-                            {metadata?.whatsIncluded?.map((item: string, i: number) => (
-                                <View key={i} style={styles.listItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.listItemText}>{item}</Text>
+    if (documentType === 'Quotation') {
+        return (
+            <Document>
+                <Page size="A4" style={styles.page}>
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <View style={styles.logoArea}>
+                            {settings?.logo_url ? (
+                                <Image style={styles.logoImage} src={settings.logo_url} />
+                            ) : (
+                                <View>
+                                    <Text style={styles.logoTextPrimary}>{settings?.legal_name?.toUpperCase() || 'TRAVEL AGENCY'}</Text>
+                                    <Text style={styles.logoTextSecondary}>Premium Travel Experiences</Text>
                                 </View>
-                            ))}
+                            )}
+                        </View>
+                        <View style={styles.headerRight}>
+                            <Text style={styles.documentType}>QUOTATION</Text>
+                            <Text style={styles.documentRef}>Ref: {reference}</Text>
+                            {metadata?.bookingId && (
+                                <Text style={[styles.documentRef, { color: '#6b7280', fontSize: 8 }]}>Booking ID: {metadata.bookingId}</Text>
+                            )}
+                        </View>
+                    </View>
+
+                    {/* Quotation Info Box */}
+                    <View style={[styles.gridContainer, { backgroundColor: '#f9fafb', padding: 15, borderRadius: 8, marginBottom: 25 }]}>
+                        <View style={styles.gridItem}>
+                            <Text style={styles.fieldLabel}>Client Name</Text>
+                            <Text style={styles.fieldValue}>{clientName || 'Valued Client'}</Text>
                         </View>
                         <View style={styles.gridItem}>
-                            <Text style={styles.sectionTitle}>Need to Know</Text>
-                            {metadata?.needToKnow?.map((item: string, i: number) => (
-                                <View key={i} style={styles.listItem}>
-                                    <Text style={styles.bullet}>•</Text>
-                                    <Text style={styles.listItemText}>{item}</Text>
+                            <Text style={styles.fieldLabel}>Package Type</Text>
+                            <Text style={styles.fieldValue}>{metadata?.packageType || 'Road'}</Text>
+                        </View>
+                        <View style={styles.gridItem}>
+                            <Text style={styles.fieldLabel}>Travel Dates</Text>
+                            <Text style={styles.fieldValue}>{checkIn} to {checkOut}</Text>
+                        </View>
+                        <View style={styles.gridItem}>
+                            <Text style={styles.fieldLabel}>No. of Guests</Text>
+                            <Text style={styles.fieldValue}>{metadata?.numGuests || 'Not specified'}</Text>
+                        </View>
+                    </View>
+
+                    {/* Hotel Options Section */}
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={styles.sectionTitle}>Proposed Property Options</Text>
+                        {metadata?.hotelOptions?.map((option: any, idx: number) => (
+                            <View key={idx} style={styles.optionCard}>
+                                <View style={styles.optionHeader}>
+                                    <Text style={styles.optionProperty}>{option.property || 'Property Option'}</Text>
+                                    <Text style={styles.optionPrice}>{option.price}</Text>
                                 </View>
-                            ))}
-                        </View>
+                                <View style={styles.optionSubheader}>
+                                    <Text style={styles.optionMeta}>Meal Plan: {option.mealPlan || 'Not specified'}</Text>
+                                    <Text style={styles.optionMeta}>Status: {metadata?.quotationStatus || 'Tentative'}</Text>
+                                </View>
+                                {option.description && (
+                                    <Text style={styles.optionDescription}>{option.description}</Text>
+                                )}
+                            </View>
+                        ))}
                     </View>
 
-                    {/* Signature */}
-                    <View style={styles.signatureBlock}>
-                        <View style={styles.signatureLine}>
-                            <Text style={styles.signatureLabel}>Customer Signature</Text>
+                    {/* Inclusions Section */}
+                    {metadata?.selectedInclusions && metadata.selectedInclusions.length > 0 && (
+                        <View style={{ marginBottom: 25 }}>
+                            <Text style={styles.inclusionsTitle}>What's Included</Text>
+                            <View style={styles.inclusionsGrid}>
+                                {metadata.selectedInclusions.map((item: string, idx: number) => (
+                                    <View key={idx} style={styles.inclusionItem}>
+                                        <View style={styles.checkIcon} />
+                                        <Text style={styles.inclusionText}>{item}</Text>
+                                    </View>
+                                ))}
+                            </View>
                         </View>
-                        <View style={styles.signatureLine}>
-                            <Text style={styles.fieldValue}>{metadata?.servedBy || 'Manager'}</Text>
-                            <Text style={styles.signatureLabel}>Served By (Coast Soul)</Text>
-                        </View>
-                    </View>
+                    )}
 
-                    {/* Footer Contact */}
-                    <View style={{ marginTop: 20, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#eeeeee', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 8, color: '#777777', marginBottom: 2 }}>{metadata?.directorName} | {metadata?.directorPhone} | {metadata?.directorEmail}</Text>
-                        <Text style={{ fontSize: 8, color: '#777777' }}>{metadata?.directorWebsite}</Text>
+                    {/* Additional Notes */}
+                    {metadata?.additionalNotes && (
+                        <View style={{ marginTop: 10 }}>
+                            <Text style={styles.sectionTitle}>Important Notes</Text>
+                            <Text style={styles.optionDescription}>{metadata.additionalNotes}</Text>
+                        </View>
+                    )}
+
+                    {/* Sign-off if needed */}
+                    <View style={{ marginTop: 'auto', paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f3f4f6' }}>
+                        <Text style={[styles.optionMeta, { textAlign: 'center' }]}>
+                            This quotation is subject to availability at the time of booking.
+                        </Text>
+                        {settings?.default_footer_note && (
+                            <Text style={[styles.footerNote, { borderTopWidth: 0, marginTop: 5 }]}>{settings.default_footer_note}</Text>
+                        )}
                     </View>
                 </Page>
             </Document>
