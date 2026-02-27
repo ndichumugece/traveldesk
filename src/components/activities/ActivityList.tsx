@@ -1,4 +1,4 @@
-import { Search, Plus, MapPin, DollarSign, Activity as ActivityIcon, Edit, Trash2 } from 'lucide-react';
+import { Search, Plus, MapPin, Activity as ActivityIcon, Edit, Trash2 } from 'lucide-react';
 import { useActivities, type Activity } from '../../hooks/useActivities';
 import { useState } from 'react';
 
@@ -110,7 +110,7 @@ export function ActivityList({ onAdd, onEdit }: ActivityListProps) {
                                         <span>{activity.location || 'Location not set'}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                                        <span className="text-emerald-600">KSH</span>
                                         <span className="text-lg">{activity.price.toLocaleString()}</span>
                                         <span className="text-xs font-medium text-slate-400 uppercase tracking-widest ml-1">Per Person</span>
                                     </div>

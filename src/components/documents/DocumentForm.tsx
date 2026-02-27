@@ -45,7 +45,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const [clientName, setClientName] = useState(initialDoc?.client || '');
     const [clientEmail, setClientEmail] = useState(initialDoc?.clientEmail || '');
     const [reference, setReference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-    const [issueDate, setIssueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
+    const [issueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
     const [checkIn, setCheckIn] = useState(initialDoc?.checkIn || '');
     const [checkOut, setCheckOut] = useState(initialDoc?.checkOut || '');
     const [documentType] = useState<string>(initialDoc?.type || typeFilter || 'Quotation');
@@ -66,11 +66,6 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const [hostContact, setHostContact] = useState(initialDoc?.metadata?.hostContact || 'Coastal Soul Kenya');
     const [contactPerson, setContactPerson] = useState(initialDoc?.metadata?.contactPerson || 'Simulizi : +254794 703583');
     const [welcomeMessage, setWelcomeMessage] = useState(initialDoc?.metadata?.welcomeMessage || "We're delighted to host you along Kenya's beautiful coast. Your accommodation is ready for you to unwind, explore, and indulge in a slice of coastal charm.");
-    const [directorName, setDirectorName] = useState(initialDoc?.metadata?.directorName || 'Fredrick Lorent');
-    const [directorPhone, setDirectorPhone] = useState(initialDoc?.metadata?.directorPhone || '+254722605329');
-    const [directorEmail, setDirectorEmail] = useState(initialDoc?.metadata?.directorEmail || 'lorent@coastalsoul.co.ke');
-    const [directorWebsite, setDirectorWebsite] = useState(initialDoc?.metadata?.directorWebsite || 'https://coastalsoul.co.ke/');
-    const [servedBy, setServedBy] = useState(initialDoc?.metadata?.servedBy || 'Fredrick');
     const [whatsIncluded, setWhatsIncluded] = useState<string[]>(initialDoc?.metadata?.whatsIncluded || ['Accommodation', 'Housekeeping', 'Towels and linen', 'Access to pool', 'Exclusive House use', 'Wi-Fi', 'Chef']);
     const [needToKnow, setNeedToKnow] = useState<string[]>(initialDoc?.metadata?.needToKnow || ['Please carry valid identification for check-in.', 'Any damages will be assessed at check-out.', 'Additional services (excursions, transfers) are available on request.', 'Restaurant bills, tips, and personal purchases are not included in your stay.']);
 
@@ -102,6 +97,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const { activities } = useActivities();
     const { transports } = useTransports();
     const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' | 'activity' | 'transport' } | null>(null);
+    const [hotelSearch, setHotelSearch] = useState('');
 
     const nights = (checkIn && checkOut) ? Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn))) : 0;
 
@@ -178,8 +174,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         roomType, mealPlan, paymentMethod,
                         checkInTime, checkOutTime, propertyAddress, googleMapsLink,
                         hostContact, contactPerson, welcomeMessage,
-                        directorName, directorPhone, directorEmail, directorWebsite,
-                        servedBy, whatsIncluded, needToKnow,
+                        whatsIncluded, needToKnow,
                         // Booking specific
                         nationality, additionalGuestInfo, packageType, rooms,
                         arrivalTransport, departureTransport, transportNote,
@@ -221,8 +216,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         roomType, mealPlan, paymentMethod,
                         checkInTime, checkOutTime, propertyAddress, googleMapsLink,
                         hostContact, contactPerson, welcomeMessage,
-                        directorName, directorPhone, directorEmail, directorWebsite,
-                        servedBy, whatsIncluded, needToKnow,
+                        whatsIncluded, needToKnow,
                         nationality, additionalGuestInfo, packageType, rooms,
                         arrivalTransport, departureTransport, transportNote,
                         dietaryRequests, specialRequests,
@@ -274,8 +268,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
             roomType, mealPlan, paymentMethod,
             checkInTime, checkOutTime, propertyAddress, googleMapsLink,
             hostContact, contactPerson, welcomeMessage,
-            directorName, directorPhone, directorEmail, directorWebsite,
-            servedBy, whatsIncluded, needToKnow,
+            whatsIncluded, needToKnow,
             // Booking specific
             nationality, additionalGuestInfo, packageType, rooms,
             arrivalTransport, departureTransport, transportNote,
@@ -380,11 +373,11 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
             {documentType === 'Invoice' && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 gap-8">
                             {/* Client Details */}
                             <div className="space-y-4">
                                 <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Client Details</h3>
-                                <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-medium text-slate-700">Client Name</label>
                                         <input
@@ -412,15 +405,6 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <div className="space-y-4">
                                 <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Document Details</h3>
                                 <div className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Issue Date</label>
-                                        <input
-                                            type="date"
-                                            value={issueDate}
-                                            onChange={(e) => setIssueDate(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 cursor-pointer"
-                                        />
-                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-sm font-medium text-slate-700">Check-in Date</label>
@@ -438,60 +422,6 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                 value={checkOut}
                                                 onChange={(e) => setCheckOut(e.target.value)}
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 cursor-pointer"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Sign-off & Agency Info */}
-                            <div className="space-y-4">
-                                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Sign-off & Agency Info</h3>
-                                <div className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Served By</label>
-                                        <input
-                                            type="text"
-                                            value={servedBy}
-                                            onChange={(e) => setServedBy(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Director Name</label>
-                                        <input
-                                            type="text"
-                                            value={directorName}
-                                            onChange={(e) => setDirectorName(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Director Email</label>
-                                        <input
-                                            type="email"
-                                            value={directorEmail}
-                                            onChange={(e) => setDirectorEmail(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700">Director Phone</label>
-                                            <input
-                                                type="text"
-                                                value={directorPhone}
-                                                onChange={(e) => setDirectorPhone(e.target.value)}
-                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700">Director Website</label>
-                                            <input
-                                                type="text"
-                                                value={directorWebsite}
-                                                onChange={(e) => setDirectorWebsite(e.target.value)}
-                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
                                             />
                                         </div>
                                     </div>
@@ -1380,32 +1310,46 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Pick a Hotel</span>
                                                         <button onClick={(e) => {
                                                             e.stopPropagation();
+                                                            setHotelSearch('');
                                                             setActiveSelection({ id: item.id, type: 'category' });
                                                         }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
                                                     </div>
-                                                    <div className="p-1 max-h-64 overflow-y-auto">
-                                                        {properties.length === 0 ? (
-                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No hotels found. Add some in Properties first.</div>
+                                                    <div className="p-2 bg-slate-50/50 border-b border-slate-100">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search hotels..."
+                                                            value={hotelSearch}
+                                                            onChange={(e) => setHotelSearch(e.target.value)}
+                                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+                                                    <div className="p-1 max-h-[212px] overflow-y-auto custom-scrollbar">
+                                                        {properties.filter(h => h.name.toLowerCase().includes(hotelSearch.toLowerCase())).length === 0 ? (
+                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No hotels found matching "{hotelSearch}"</div>
                                                         ) : (
-                                                            properties.map(hotel => (
-                                                                <button
-                                                                    key={hotel.id}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const desc = `${hotel.name} (${nights} nights)`;
-                                                                        setLineItems(lineItems.map(li =>
-                                                                            li.id === item.id
-                                                                                ? { ...li, description: desc, quantity: nights || 1, unitPrice: hotel.base_price }
-                                                                                : li
-                                                                        ));
-                                                                        setActiveSelection(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                                                >
-                                                                    <div className="font-semibold text-slate-900">{hotel.name}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • ${hotel.base_price}/night</div>
-                                                                </button>
-                                                            ))
+                                                            properties
+                                                                .filter(h => h.name.toLowerCase().includes(hotelSearch.toLowerCase()))
+                                                                .map(hotel => (
+                                                                    <button
+                                                                        key={hotel.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const desc = `${hotel.name} (${nights} nights)`;
+                                                                            setLineItems(lineItems.map(li =>
+                                                                                li.id === item.id
+                                                                                    ? { ...li, description: desc, quantity: nights || 1, unitPrice: hotel.base_price }
+                                                                                    : li
+                                                                            ));
+                                                                            setHotelSearch('');
+                                                                            setActiveSelection(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                                                    >
+                                                                        <div className="font-semibold text-slate-900">{hotel.name}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • ${hotel.base_price}/night</div>
+                                                                    </button>
+                                                                ))
                                                         )}
                                                     </div>
                                                 </div>

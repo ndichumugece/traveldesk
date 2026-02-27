@@ -21,15 +21,23 @@ export interface RoomType {
     extra_adult_rate: number;
     child_rate: number;
     infants_free: boolean;
+    seasonal_pricing?: SeasonalPricing[];
 }
 
 export interface SeasonalPricing {
     id?: string;
     property_id?: string;
+    room_type_id?: string;
     name: string;
     start_date: string;
     end_date: string;
+    pricing_type: 'percentage' | 'fixed';
     markup_percentage: number;
+    price_sgl?: number | null;
+    price_dbl?: number | null;
+    price_twn?: number | null;
+    price_tpl?: number | null;
+    price_quad?: number | null;
 }
 
 export interface Property {
@@ -58,7 +66,7 @@ export const useProperties = () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('properties')
-                .select('*, room_types(*), seasonal_pricing(*)')
+                .select('*, room_types(*, seasonal_pricing(*)), seasonal_pricing(*)')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -87,14 +95,39 @@ export const useProperties = () => {
 
             const propertyId = propData.id;
 
-            // 2. Insert room types
+            // 2. Insert room types and their seasonal pricing
             if (roomTypes.length > 0) {
-                const rtToInsert = roomTypes.map(rt => ({ ...rt, property_id: propertyId }));
-                const { error: rtError } = await supabase.from('room_types').insert(rtToInsert);
-                if (rtError) throw rtError;
+                for (const rt of roomTypes) {
+                    const { data: rtData, error: rtError } = await supabase
+                        .from('room_types')
+                        .insert([{ ...rt, property_id: propertyId, seasonal_pricing: undefined }]) // Don't try to insert nested JSON
+                        .select()
+                        .single();
+
+                    if (rtError) throw rtError;
+
+                    if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
+                        const spToInsert = rt.seasonal_pricing.map(sp => ({
+                            name: sp.name,
+                            start_date: sp.start_date,
+                            end_date: sp.end_date,
+                            pricing_type: sp.pricing_type || 'percentage',
+                            markup_percentage: sp.markup_percentage || 0,
+                            price_sgl: sp.price_sgl ?? null,
+                            price_dbl: sp.price_dbl ?? null,
+                            price_twn: sp.price_twn ?? null,
+                            price_tpl: sp.price_tpl ?? null,
+                            price_quad: sp.price_quad ?? null,
+                            property_id: propertyId,
+                            room_type_id: rtData.id
+                        }));
+                        const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
+                        if (spError) throw spError;
+                    }
+                }
             }
 
-            // 3. Insert seasonal pricing
+            // 3. Insert global seasonal pricing (if still used)
             if (seasonalPricing.length > 0) {
                 const spToInsert = seasonalPricing.map(sp => ({ ...sp, property_id: propertyId }));
                 const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
@@ -132,31 +165,58 @@ export const useProperties = () => {
 
             if (propError) throw propError;
 
-            // 2. Replace room types (delete existing, insert new ones to avoid complex diffing)
+            // 2. Replace room types (delete existing, insert new ones)
+            // Note: deleting room types will cascade delete their associated seasonal pricing
             await supabase.from('room_types').delete().eq('property_id', id);
             if (roomTypes.length > 0) {
-                const rtToInsert = roomTypes.map(rt => ({
-                    name: rt.name,
-                    capacity: rt.capacity,
-                    price_modifier: rt.price_modifier,
-                    occupancy_type: rt.occupancy_type,
-                    rate_type: rt.rate_type,
-                    price_sgl: rt.price_sgl ?? null,
-                    price_dbl: rt.price_dbl ?? null,
-                    price_twn: rt.price_twn ?? null,
-                    price_tpl: rt.price_tpl ?? null,
-                    price_quad: rt.price_quad ?? null,
-                    extra_adult_rate: rt.extra_adult_rate,
-                    child_rate: rt.child_rate,
-                    infants_free: rt.infants_free,
-                    property_id: id
-                }));
-                const { error: rtError } = await supabase.from('room_types').insert(rtToInsert);
-                if (rtError) throw rtError;
+                for (const rt of roomTypes) {
+                    const { data: rtData, error: rtError } = await supabase
+                        .from('room_types')
+                        .insert([{
+                            name: rt.name,
+                            capacity: rt.capacity,
+                            price_modifier: rt.price_modifier,
+                            occupancy_type: rt.occupancy_type,
+                            rate_type: rt.rate_type,
+                            price_sgl: rt.price_sgl ?? null,
+                            price_dbl: rt.price_dbl ?? null,
+                            price_twn: rt.price_twn ?? null,
+                            price_tpl: rt.price_tpl ?? null,
+                            price_quad: rt.price_quad ?? null,
+                            extra_adult_rate: rt.extra_adult_rate,
+                            child_rate: rt.child_rate,
+                            infants_free: rt.infants_free,
+                            property_id: id
+                        }])
+                        .select()
+                        .single();
+
+                    if (rtError) throw rtError;
+
+                    if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
+                        const spToInsert = rt.seasonal_pricing.map(sp => ({
+                            name: sp.name,
+                            start_date: sp.start_date,
+                            end_date: sp.end_date,
+                            pricing_type: sp.pricing_type || 'percentage',
+                            markup_percentage: sp.markup_percentage || 0,
+                            price_sgl: sp.price_sgl ?? null,
+                            price_dbl: sp.price_dbl ?? null,
+                            price_twn: sp.price_twn ?? null,
+                            price_tpl: sp.price_tpl ?? null,
+                            price_quad: sp.price_quad ?? null,
+                            property_id: id,
+                            room_type_id: rtData.id
+                        }));
+                        const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
+                        if (spError) throw spError;
+                    }
+                }
             }
 
-            // 3. Replace seasonal pricing
-            await supabase.from('seasonal_pricing').delete().eq('property_id', id);
+            // 3. Replace global seasonal pricing
+            // Also delete top-level ones that don't belong to a room type
+            await supabase.from('seasonal_pricing').delete().eq('property_id', id).is('room_type_id', null);
             if (seasonalPricing.length > 0) {
                 const spToInsert = seasonalPricing.map(sp => ({
                     name: sp.name,

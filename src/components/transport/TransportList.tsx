@@ -1,4 +1,4 @@
-import { Search, Plus, DollarSign, Car, Edit, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Car, Edit, Trash2, Users } from 'lucide-react';
 import { useTransports, type Transport } from '../../hooks/useTransports';
 import { useState } from 'react';
 
@@ -113,7 +113,7 @@ export function TransportList({ onAdd, onEdit }: TransportListProps) {
                                         <span>Max {transport.capacity} Pax</span>
                                     </div>
                                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                                        <DollarSign className="w-4 h-4 text-emerald-600" />
+                                        <span className="text-emerald-600">KSH</span>
                                         <span className="text-lg">{transport.price_per_way.toLocaleString()}</span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Per Way</span>
                                     </div>

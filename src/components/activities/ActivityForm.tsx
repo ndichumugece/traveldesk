@@ -87,7 +87,7 @@ export function ActivityForm({ onDiscard, existingActivity }: ActivityFormProps)
                             <input value={location} onChange={e => setLocation(e.target.value)} className={inputBase} placeholder="e.g. Paris, France" />
                         </div>
                         <div>
-                            <label className={labelBase}>Price (USD) *</label>
+                            <label className={labelBase}>Price (KSH) *</label>
                             <input type="number" value={price} onChange={e => setPrice(e.target.value)} className={inputBase} placeholder="0.00" />
                         </div>
                         <div>

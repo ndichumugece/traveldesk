@@ -38,7 +38,7 @@ export function Onboarding() {
     const [data, setData] = useState<OnboardingData>({
         agencyName: '',
         country: '',
-        currency: 'USD',
+        currency: 'KSH',
         products: [],
         documentTypes: []
     });
@@ -189,10 +189,10 @@ export function Onboarding() {
                                 className="w-full p-4 bg-white border border-slate-200 rounded-xl shadow-sm focus:border-[#5438FF] focus:ring-2 focus:ring-[#5438FF]/20 transition-all text-lg font-medium outline-none appearance-none cursor-pointer"
                                 autoFocus
                             >
+                                <option value="KSH">KSH</option>
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
                                 <option value="GBP">GBP (£)</option>
-                                <option value="KES">KES</option>
                                 <option value="ZAR">ZAR</option>
                             </select>
                             <div className="mt-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100">

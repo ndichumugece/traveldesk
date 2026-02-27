@@ -724,7 +724,7 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         <Text style={styles.documentRef}># {reference}</Text>
                         <View style={styles.balanceDueBox}>
                             <Text style={styles.balanceDueLabel}>Balance Due</Text>
-                            <Text style={styles.balanceDueAmount}>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.balanceDueAmount}>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                     </View>
                 </View>
@@ -811,11 +811,11 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         </View>
                         <View style={styles.totalRowNoBorder}>
                             <Text style={styles.totalLabel}>Total</Text>
-                            <Text style={styles.totalValueBold}>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.totalValueBold}>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                         <View style={styles.balanceGrounded}>
                             <Text style={styles.totalLabel}>Balance Due</Text>
-                            <Text style={styles.totalValueBold}>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.totalValueBold}>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                     </View>
                 </View>

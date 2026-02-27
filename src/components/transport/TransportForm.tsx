@@ -123,7 +123,7 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
                             <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} className={inputBase} placeholder="4" />
                         </div>
                         <div>
-                            <label className={labelBase}>Price Per Way (USD) *</label>
+                            <label className={labelBase}>Price Per Way (KSH) *</label>
                             <input type="number" value={pricePerWay} onChange={e => setPricePerWay(e.target.value)} className={inputBase} placeholder="0.00" />
                         </div>
                         <div>

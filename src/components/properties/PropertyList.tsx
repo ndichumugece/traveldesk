@@ -81,7 +81,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm font-semibold text-slate-900">
-                                            ${property.base_price}/night
+                                            KSH {property.base_price}/night
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-500">
                                             {property.rooms} rooms

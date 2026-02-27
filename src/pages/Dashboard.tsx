@@ -27,7 +27,7 @@ export function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <MetricCard
                     title="Total Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString()}`}
+                    value={`KSH ${stats.totalRevenue.toLocaleString()}`}
                     icon={DollarSign}
                     trend={{ value: stats.revenueTrend || 12.5, isPositive: true }}
                 />

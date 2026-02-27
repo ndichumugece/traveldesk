@@ -38,12 +38,12 @@ export function RevenueChart({ data }: RevenueChartProps) {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#64748b', fontSize: 12 }}
-                            tickFormatter={(value) => `$${value}`}
+                            tickFormatter={(value) => `KSH ${value}`}
                         />
                         <Tooltip
                             contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             itemStyle={{ color: '#0f172a', fontWeight: 600 }}
-                            formatter={(value: any) => [`$${value}`, 'Revenue']}
+                            formatter={(value: any) => [`KSH ${value}`, 'Revenue']}
                         />
                         <Area
                             type="monotone"
