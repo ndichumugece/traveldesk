@@ -12,9 +12,9 @@ export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
         <div className="min-h-screen bg-white flex">
             {/* Left side */}
             <div className="hidden lg:flex w-1/2 bg-[#5438FF] flex-col overflow-hidden relative">
-                <div className="p-12 lg:p-16 flex-1 flex flex-col pt-16 z-10">
-                    <div className="max-w-[420px] lg:pt-8">
-                        <h1 className="text-5xl leading-[1.25] font-semibold text-white mb-4">
+                <div className="p-12 lg:p-16 flex-1 flex flex-col pt-12 z-10">
+                    <div className="max-w-[420px] lg:pt-4">
+                        <h1 className="text-4xl leading-[1.25] font-semibold text-white mb-4">
                             {heading || "Run your travel operations with clarity and confidence"}
                         </h1>
                         <p className="text-[#B4AEFF] text-lg leading-relaxed font-medium">
@@ -24,7 +24,7 @@ export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
                 </div>
 
                 {/* UI Mockup Window - built carefully out of CSS to exactly match B2B styling */}
-                <div className="absolute -right-8 bottom-0 w-[110%] h-[55%] pointer-events-none select-none">
+                <div className="absolute -right-8 bottom-0 w-[110%] h-[45%] pointer-events-none select-none">
                     <div className="absolute top-0 left-12 right-0 bottom-[-20px] bg-white rounded-tl-xl shadow-[-20px_0_40px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col">
                         <div className="h-10 border-b border-slate-100 flex items-center px-4 gap-2 shrink-0 bg-white">
                             <div className="flex gap-1.5">

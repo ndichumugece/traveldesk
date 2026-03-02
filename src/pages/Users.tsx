@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Mail, X, Loader2, Trash2, Pencil, Link, Check } from 'lucide-react';
+import { Plus, Mail, X, Loader2, Pencil, Check, Link } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUsers } from '../hooks/useUsers';
 import type { UserProfile } from '../hooks/useUsers';
 
@@ -8,7 +9,8 @@ export function Users() {
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('staff');
     const [copiedId, setCopiedId] = useState<string | null>(null);
-    const { users, loading, inviteUser, cancelInvite, updateUserRole, deleteUserProfile } = useUsers();
+    const navigate = useNavigate();
+    const { users, loading, inviteUser } = useUsers();
 
     const admins = users.filter(u => u.role.toLowerCase() === 'admin');
     const staff = users.filter(u => u.role.toLowerCase() !== 'admin');
@@ -23,26 +25,6 @@ export function Users() {
         }
     };
 
-    const handleRoleToggle = async (user: UserProfile) => {
-        const newRole = user.role.toLowerCase() === 'admin' ? 'staff' : 'admin';
-        if (confirm(`Change ${user.name}'s role to ${newRole.charAt(0).toUpperCase() + newRole.slice(1)}?`)) {
-            try {
-                await updateUserRole(user.id, newRole);
-            } catch (error: any) {
-                alert(error.message);
-            }
-        }
-    };
-
-    const handleDeleteUser = async (user: UserProfile) => {
-        if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
-            try {
-                await deleteUserProfile(user.id);
-            } catch (error: any) {
-                alert(error.message);
-            }
-        }
-    };
 
     const handleCopyLink = async (user: UserProfile) => {
         const signupUrl = `${window.location.origin}/register?email=${encodeURIComponent(user.email)}`;
@@ -68,12 +50,13 @@ export function Users() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                     {usersList.map((user) => (
-                        <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <tr
+                            key={user.id}
+                            onClick={() => navigate(`/users/${user.id}/edit`)}
+                            className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                        >
                             <td className="py-3 px-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center border border-slate-200 overflow-hidden shrink-0 ${user.status === 'pending' ? 'bg-slate-50 border-dashed' : 'bg-slate-100'}`}>
-                                        {user.status === 'pending' ? <Mail className="w-5 h-5 text-slate-400" /> : user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                    </div>
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-2">
                                             <span className={`text-sm font-semibold transition-colors ${user.status === 'pending' ? 'text-slate-500 italic' : 'text-slate-900 group-hover:text-brand-600'}`}>
@@ -95,11 +78,14 @@ export function Users() {
                             <td className="py-3 px-4 text-sm text-slate-600">
                                 {user.lastActive}
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3 px-4 text-right">
                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {user.status === 'pending' && (
                                         <button
-                                            onClick={() => handleCopyLink(user)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleCopyLink(user);
+                                            }}
                                             className={`p-1.5 rounded-lg transition-all flex items-center gap-1.5 ${copiedId === user.id ? 'bg-emerald-50 text-emerald-600' : 'hover:bg-slate-100 text-slate-400 hover:text-brand-600'}`}
                                             title="Copy Signup Link"
                                         >
@@ -107,28 +93,7 @@ export function Users() {
                                             {copiedId === user.id && <span className="text-[10px] font-bold uppercase">Copied</span>}
                                         </button>
                                     )}
-                                    <button
-                                        onClick={async () => {
-                                            if (user.status === 'pending') {
-                                                if (confirm(`Cancel invitation for ${user.email}?`)) {
-                                                    await cancelInvite(user.id);
-                                                }
-                                            } else {
-                                                await handleRoleToggle(user);
-                                            }
-                                        }}
-                                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
-                                        title={user.status === 'pending' ? 'Cancel Invitation' : 'Edit Role'}
-                                    >
-                                        {user.status === 'pending' ? <X className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteUser(user)}
-                                        className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
-                                        title="Delete User"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    <Pencil className="w-4 h-4 text-slate-300" />
                                 </div>
                             </td>
                         </tr>

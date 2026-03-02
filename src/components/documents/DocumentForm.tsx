@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Loader2, Download, Eye, Check } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Loader2, Download, Eye, Check, X } from 'lucide-react';
 import { useDocuments } from '../../hooks/useDocuments';
 import type { Document } from '../../hooks/useDocuments';
 import { pdf } from '@react-pdf/renderer';
@@ -8,31 +8,19 @@ import { useSettings } from '../../hooks/useSettings';
 import { useProperties } from '../../hooks/useProperties';
 import { useActivities } from '../../hooks/useActivities';
 import { useTransports } from '../../hooks/useTransports';
+import { useInclusions } from '../../hooks/useInclusions';
+import { useExclusions } from '../../hooks/useExclusions';
+import { useMealPlans } from '../../hooks/useMealPlans';
 import { differenceInDays, parseISO } from 'date-fns';
+import { RichTextEditor } from '../ui/RichTextEditor';
 
 const NATIONALITIES = ['Resident', 'East Africa Resident', 'Non-resident'];
 const PACKAGE_TYPES = ['Bed & Breakfast', 'Half Board', 'Full Board', 'All Inclusive', 'Room Only'];
-const MEAL_PLANS = ['Standard', 'Silver', 'Gold', 'Platinum', 'Chef Ferdinand'];
 const BED_TYPES = ['Single', 'Double', 'Twin', 'King', 'Queen'];
 const ROOM_TYPES = ['Standard Room', 'Deluxe Room', 'Suite', 'Penthouse', 'Villa 2Bedroom', 'Villa 3Bedroom'];
 const TRANSPORT_MODES = ['Self Drive', 'Train', 'Flying', 'Road Package'];
 
-const INCLUSION_OPTIONS = [
-    'Accommodation',
-    'Bed and Breakfast',
-    'Boat Transfer',
-    'Breakfast and Dinner',
-    'Breakfast, Lunch and Dinner',
-    'Bush walks',
-    'Camel rides',
-    'Complimentary Back and Neck Massage',
-    'Conservancy Fee',
-    'Cultural Visit transfers',
-    'Daily Game Drives',
-    'E- Bikes',
-    'Emergency Medical Evacuation',
-    'Farm and Factory visits'
-];
+// Removed hardcoded INCLUSION_OPTIONS to use dynamic data from database
 
 export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard: () => void, initialDoc?: Document | null, typeFilter?: string | null }) {
     const { createDocument, updateDocument } = useDocuments();
@@ -44,7 +32,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const today = new Date().toISOString().split('T')[0];
     const [clientName, setClientName] = useState(initialDoc?.client || '');
     const [clientEmail, setClientEmail] = useState(initialDoc?.clientEmail || '');
-    const [reference, setReference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
+    const [reference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
     const [issueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
     const [checkIn, setCheckIn] = useState(initialDoc?.checkIn || '');
     const [checkOut, setCheckOut] = useState(initialDoc?.checkOut || '');
@@ -83,7 +71,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const [specialRequests, setSpecialRequests] = useState(initialDoc?.metadata?.specialRequests || '');
 
     // Quotation Specific State
-    const [bookingId, setBookingId] = useState(initialDoc?.metadata?.bookingId || '');
+    const [bookingId] = useState(initialDoc?.metadata?.bookingId || Math.floor(1000000000 + Math.random() * 9000000000).toString());
     const [quotationStatus, setQuotationStatus] = useState(initialDoc?.metadata?.quotationStatus || 'Tentative');
     const [hotelOptions, setHotelOptions] = useState<any[]>(
         initialDoc?.metadata?.hotelOptions || [{ property: '', mealPlan: '', price: '', description: '' }]
@@ -91,13 +79,21 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const [selectedInclusions, setSelectedInclusions] = useState<string[]>(
         initialDoc?.metadata?.selectedInclusions || []
     );
+    const [selectedExclusions, setSelectedExclusions] = useState<string[]>(
+        initialDoc?.metadata?.selectedExclusions || []
+    );
     const [additionalNotes, setAdditionalNotes] = useState(initialDoc?.metadata?.additionalNotes || '');
 
     const { properties } = useProperties();
     const { activities } = useActivities();
     const { transports } = useTransports();
+    const { inclusions } = useInclusions();
+    const { exclusions } = useExclusions();
+    const { mealPlans } = useMealPlans();
     const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' | 'activity' | 'transport' } | null>(null);
     const [hotelSearch, setHotelSearch] = useState('');
+    const [activeHotelSearchIndex, setActiveHotelSearchIndex] = useState<number | null>(null);
+    const [hotelOptionSearch, setHotelOptionSearch] = useState('');
 
     const nights = (checkIn && checkOut) ? Math.max(0, differenceInDays(parseISO(checkOut), parseISO(checkIn))) : 0;
 
@@ -180,7 +176,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         arrivalTransport, departureTransport, transportNote,
                         dietaryRequests, specialRequests,
                         // Quotation specific
-                        bookingId, quotationStatus, hotelOptions, selectedInclusions, additionalNotes
+                        bookingId, quotationStatus, hotelOptions, selectedInclusions, selectedExclusions, additionalNotes
                     } : {}}
                     settings={settings}
                 />
@@ -221,7 +217,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         arrivalTransport, departureTransport, transportNote,
                         dietaryRequests, specialRequests,
                         // Quotation specific
-                        bookingId, quotationStatus, hotelOptions, selectedInclusions, additionalNotes
+                        bookingId, quotationStatus, hotelOptions, selectedInclusions, selectedExclusions, additionalNotes
                     } : {}}
                     settings={settings}
                 />
@@ -274,7 +270,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
             arrivalTransport, departureTransport, transportNote,
             dietaryRequests, specialRequests,
             // New Quotation specific
-            bookingId, quotationStatus, hotelOptions, selectedInclusions, additionalNotes
+            bookingId, quotationStatus, hotelOptions, selectedInclusions, selectedExclusions, additionalNotes
         } : {};
 
         let errorMsg = null;
@@ -487,9 +483,8 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                     <input
                                         type="text"
                                         value={bookingId}
-                                        onChange={(e) => setBookingId(e.target.value)}
-                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        placeholder="7032501505"
+                                        readOnly
+                                        className="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl font-medium text-slate-500 cursor-not-allowed outline-none"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -497,9 +492,8 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                     <input
                                         type="text"
                                         value={reference}
-                                        onChange={(e) => setReference(e.target.value)}
-                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        placeholder="QV-1011"
+                                        readOnly
+                                        className="w-full px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl font-medium text-slate-500 cursor-not-allowed outline-none"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -524,16 +518,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <h2 className="text-lg font-bold text-slate-900">Stay Information</h2>
                             <p className="text-slate-500 text-sm">Proposed travel dates.</p>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-slate-700">Check In Date</label>
-                                <input
-                                    type="date"
-                                    value={checkIn}
-                                    onChange={(e) => setCheckIn(e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-slate-700">Check In Time</label>
                                 <input
@@ -542,15 +527,6 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                     onChange={(e) => setCheckInTime(e.target.value)}
                                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
                                     placeholder="2:00pm"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-slate-700">Check Out Date</label>
-                                <input
-                                    type="date"
-                                    value={checkOut}
-                                    onChange={(e) => setCheckOut(e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -594,15 +570,71 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Option {idx + 1}</span>
                                     </div>
                                     <div className="space-y-6">
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-1.5 relative">
                                             <label className="text-sm font-medium text-slate-700">Property</label>
                                             <input
                                                 type="text"
                                                 value={option.property}
+                                                onFocus={() => {
+                                                    setActiveHotelSearchIndex(idx);
+                                                    setHotelOptionSearch('');
+                                                }}
                                                 onChange={(e) => updateHotelOption(idx, { property: e.target.value })}
-                                                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-900"
+                                                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                                                 placeholder="e.g. Hemingways Eden Nairobi"
                                             />
+
+                                            {/* Search Dropdown Overlay */}
+                                            {activeHotelSearchIndex === idx && (
+                                                <div className="absolute left-0 top-full mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Search Properties</span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveHotelSearchIndex(null);
+                                                            }}
+                                                            className="text-slate-400 hover:text-slate-600 p-1"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="p-2 border-b border-slate-50">
+                                                        <input
+                                                            autoFocus
+                                                            type="text"
+                                                            placeholder="Type to filter..."
+                                                            value={hotelOptionSearch}
+                                                            onChange={(e) => setHotelOptionSearch(e.target.value)}
+                                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-[200px] overflow-y-auto">
+                                                        {properties
+                                                            .filter(p => p.name.toLowerCase().includes(hotelOptionSearch.toLowerCase()))
+                                                            .map(p => (
+                                                                <button
+                                                                    key={p.id}
+                                                                    onClick={() => {
+                                                                        updateHotelOption(idx, {
+                                                                            property: p.name,
+                                                                            price: `ksh ${p.base_price.toLocaleString()}`,
+                                                                            description: p.location + (p.amenities?.length ? ` • ${p.amenities.join(', ')}` : '')
+                                                                        });
+                                                                        setActiveHotelSearchIndex(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                                                                >
+                                                                    <div className="font-bold text-slate-900">{p.name}</div>
+                                                                    <div className="text-xs text-slate-500">{p.location} • ksh {p.base_price.toLocaleString()}</div>
+                                                                </button>
+                                                            ))}
+                                                        {properties.filter(p => p.name.toLowerCase().includes(hotelOptionSearch.toLowerCase())).length === 0 && (
+                                                            <div className="p-4 text-center text-slate-400 text-sm">No properties found.</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1.5">
@@ -613,7 +645,9 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                     className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl font-medium text-slate-900"
                                                 >
                                                     <option value="">Select Meal Plan</option>
-                                                    {MEAL_PLANS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                    {mealPlans.filter(p => p.status === 'active').map(plan => (
+                                                        <option key={plan.id} value={plan.name}>{plan.name}</option>
+                                                    ))}
                                                 </select>
                                             </div>
                                             <div className="space-y-1.5">
@@ -650,29 +684,68 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <p className="text-slate-500 text-sm">Select what is included and excluded in this quotation.</p>
                         </div>
                         <div className="space-y-4">
-                            <label className="text-sm font-bold text-slate-900">Inclusions</label>
+                            <label className="text-sm font-bold text-slate-900 uppercase tracking-wider">Inclusions</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {INCLUSION_OPTIONS.map(option => (
+                                {inclusions.map(inc => (
                                     <button
-                                        key={option}
+                                        key={inc.id}
+                                        type="button"
                                         onClick={() => {
-                                            if (selectedInclusions.includes(option)) {
-                                                setSelectedInclusions(selectedInclusions.filter(i => i !== option));
+                                            if (selectedInclusions.includes(inc.name)) {
+                                                setSelectedInclusions(selectedInclusions.filter(i => i !== inc.name));
                                             } else {
-                                                setSelectedInclusions([...selectedInclusions, option]);
+                                                setSelectedInclusions([...selectedInclusions, inc.name]);
                                             }
                                         }}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedInclusions.includes(option)
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedInclusions.includes(inc.name)
                                             ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm'
-                                            : 'bg-slate-50 border-slate-100 text-slate-600 hover:border-slate-200'
+                                            : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200'
                                             }`}
                                     >
-                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedInclusions.includes(option) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'}`}>
-                                            {selectedInclusions.includes(option) && <Check className="w-3.5 h-3.5" />}
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedInclusions.includes(inc.name) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 bg-white'}`}>
+                                            {selectedInclusions.includes(inc.name) && <Check className="w-3.5 h-3.5" />}
                                         </div>
-                                        <span className="text-sm font-medium">{option}</span>
+                                        <span className="text-sm font-medium">{inc.name}</span>
                                     </button>
                                 ))}
+                                {inclusions.length === 0 && (
+                                    <div className="col-span-full p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-sm">
+                                        No active inclusions found. Add them in Configuration.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-slate-100">
+                            <label className="text-sm font-bold text-slate-900 uppercase tracking-wider">Exclusions</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {exclusions.map(exc => (
+                                    <button
+                                        key={exc.id}
+                                        type="button"
+                                        onClick={() => {
+                                            if (selectedExclusions.includes(exc.name)) {
+                                                setSelectedExclusions(selectedExclusions.filter(e => e !== exc.name));
+                                            } else {
+                                                setSelectedExclusions([...selectedExclusions, exc.name]);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedExclusions.includes(exc.name)
+                                            ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm'
+                                            : 'bg-white border-slate-100 text-slate-600 hover:border-slate-200'
+                                            }`}
+                                    >
+                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedExclusions.includes(exc.name) ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-300 bg-white'}`}>
+                                            {selectedExclusions.includes(exc.name) && <Check className="w-3.5 h-3.5" />}
+                                        </div>
+                                        <span className="text-sm font-medium">{exc.name}</span>
+                                    </button>
+                                ))}
+                                {exclusions.length === 0 && (
+                                    <div className="col-span-full p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-sm">
+                                        No active exclusions found. Add them in Configuration.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -684,12 +757,10 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <p className="text-slate-500 text-sm">Add distinct notes, tables, or formatted text (e.g. from Word).</p>
                         </div>
                         <div className="space-y-1.5">
-                            <textarea
+                            <RichTextEditor
                                 value={additionalNotes}
-                                onChange={(e) => setAdditionalNotes(e.target.value)}
-                                rows={8}
-                                className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                placeholder="Paste your content here..."
+                                onChange={setAdditionalNotes}
+                                placeholder="Paste or type your content here... formatting and tables are supported."
                             />
                         </div>
                     </div>
@@ -697,207 +768,209 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
             )}
 
             {/* Extended Confirmation Voucher Sections */}
-            {documentType === 'Voucher' && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-                    <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            <div className="space-y-4">
-                                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Guest Details</h3>
+            {
+                documentType === 'Voucher' && (
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 <div className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Guest Name</label>
-                                        <input
-                                            type="text"
-                                            value={guestName}
-                                            onChange={(e) => setGuestName(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                            placeholder="Main guest name"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Guest Phone</label>
-                                        <input
-                                            type="text"
-                                            value={guestPhone}
-                                            onChange={(e) => setGuestPhone(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                            placeholder="+254..."
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Guest Email</label>
-                                        <input
-                                            type="email"
-                                            value={guestEmail}
-                                            onChange={(e) => setGuestEmail(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                            placeholder="guest@example.com"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Rate & Finance */}
-                            <div className="space-y-4">
-                                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Rate & Finance</h3>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Guest Details</h3>
+                                    <div className="space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700">Room Type</label>
+                                            <label className="text-sm font-medium text-slate-700">Guest Name</label>
                                             <input
                                                 type="text"
-                                                value={roomType}
-                                                onChange={(e) => setRoomType(e.target.value)}
+                                                value={guestName}
+                                                onChange={(e) => setGuestName(e.target.value)}
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                                placeholder="e.g. 2Bedroom"
+                                                placeholder="Main guest name"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-medium text-slate-700">Meal Plan</label>
+                                            <label className="text-sm font-medium text-slate-700">Guest Phone</label>
                                             <input
                                                 type="text"
-                                                value={mealPlan}
-                                                onChange={(e) => setMealPlan(e.target.value)}
+                                                value={guestPhone}
+                                                onChange={(e) => setGuestPhone(e.target.value)}
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                                placeholder="e.g. Chef Ferdinand"
+                                                placeholder="+254..."
                                             />
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5 col-span-2">
-                                            <label className="text-sm font-medium text-slate-700">Payment Method</label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Guest Email</label>
                                             <input
-                                                type="text"
-                                                value={paymentMethod}
-                                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                                type="email"
+                                                value={guestEmail}
+                                                onChange={(e) => setGuestEmail(e.target.value)}
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                placeholder="guest@example.com"
                                             />
                                         </div>
                                     </div>
                                 </div>
-                            </div >
 
-                            {/* Location & Host */}
-                            <div className="space-y-4">
-                                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Location & Host</h3>
+                                {/* Rate & Finance */}
                                 <div className="space-y-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Property Address</label>
-                                        <input
-                                            type="text"
-                                            value={propertyAddress}
-                                            onChange={(e) => setPropertyAddress(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
+                                    <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Rate & Finance</h3>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-sm font-medium text-slate-700">Room Type</label>
+                                                <input
+                                                    type="text"
+                                                    value={roomType}
+                                                    onChange={(e) => setRoomType(e.target.value)}
+                                                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                    placeholder="e.g. 2Bedroom"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-sm font-medium text-slate-700">Meal Plan</label>
+                                                <input
+                                                    type="text"
+                                                    value={mealPlan}
+                                                    onChange={(e) => setMealPlan(e.target.value)}
+                                                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                    placeholder="e.g. Chef Ferdinand"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5 col-span-2">
+                                                <label className="text-sm font-medium text-slate-700">Payment Method</label>
+                                                <input
+                                                    type="text"
+                                                    value={paymentMethod}
+                                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Google Maps Link</label>
-                                        <input
-                                            type="text"
-                                            value={googleMapsLink}
-                                            onChange={(e) => setGoogleMapsLink(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Host Contact</label>
-                                        <input
-                                            type="text"
-                                            value={hostContact}
-                                            onChange={(e) => setHostContact(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                            placeholder="Host phone/email"
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-sm font-medium text-slate-700">Contact Person</label>
-                                        <input
-                                            type="text"
-                                            value={contactPerson}
-                                            onChange={(e) => setContactPerson(e.target.value)}
-                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                        />
-                                    </div>
-                                </div>
-                            </div >
+                                </div >
 
-                            {/* Additional Info Lists */}
-                            <div className="space-y-4 lg:col-span-2">
-                                <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Lists & Notes</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-medium text-slate-700 flex justify-between">
-                                            What's Included
-                                            <button
-                                                onClick={() => setWhatsIncluded([...whatsIncluded, ''])}
-                                                className="text-[10px] text-brand-600 hover:text-brand-700 font-bold uppercase"
-                                            >+ Add Item</button>
-                                        </label>
-                                        <div className="space-y-2">
-                                            {whatsIncluded.map((item, idx) => (
-                                                <div key={idx} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={item}
-                                                        onChange={(e) => {
-                                                            const newItems = [...whatsIncluded];
-                                                            newItems[idx] = e.target.value;
-                                                            setWhatsIncluded(newItems);
-                                                        }}
-                                                        className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium"
-                                                    />
-                                                    <button
-                                                        onClick={() => setWhatsIncluded(whatsIncluded.filter((_, i) => i !== idx))}
-                                                        className="text-slate-400 hover:text-rose-500"
-                                                    >×</button>
-                                                </div>
-                                            ))}
+                                {/* Location & Host */}
+                                <div className="space-y-4">
+                                    <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Location & Host</h3>
+                                    <div className="space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Property Address</label>
+                                            <input
+                                                type="text"
+                                                value={propertyAddress}
+                                                onChange={(e) => setPropertyAddress(e.target.value)}
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Google Maps Link</label>
+                                            <input
+                                                type="text"
+                                                value={googleMapsLink}
+                                                onChange={(e) => setGoogleMapsLink(e.target.value)}
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Host Contact</label>
+                                            <input
+                                                type="text"
+                                                value={hostContact}
+                                                onChange={(e) => setHostContact(e.target.value)}
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                placeholder="Host phone/email"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Contact Person</label>
+                                            <input
+                                                type="text"
+                                                value={contactPerson}
+                                                onChange={(e) => setContactPerson(e.target.value)}
+                                                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                            />
                                         </div>
                                     </div>
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-medium text-slate-700 flex justify-between">
-                                            Need to Know
-                                            <button
-                                                onClick={() => setNeedToKnow([...needToKnow, ''])}
-                                                className="text-[10px] text-brand-600 hover:text-brand-700 font-bold uppercase"
-                                            >+ Add Item</button>
-                                        </label>
-                                        <div className="space-y-2">
-                                            {needToKnow.map((item, idx) => (
-                                                <div key={idx} className="flex gap-2">
-                                                    <input
-                                                        type="text"
-                                                        value={item}
-                                                        onChange={(e) => {
-                                                            const newItems = [...needToKnow];
-                                                            newItems[idx] = e.target.value;
-                                                            setNeedToKnow(newItems);
-                                                        }}
-                                                        className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium"
-                                                    />
-                                                    <button
-                                                        onClick={() => setNeedToKnow(needToKnow.filter((_, i) => i !== idx))}
-                                                        className="text-slate-400 hover:text-rose-500"
-                                                    >×</button>
-                                                </div>
-                                            ))}
+                                </div >
+
+                                {/* Additional Info Lists */}
+                                <div className="space-y-4 lg:col-span-2">
+                                    <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Lists & Notes</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium text-slate-700 flex justify-between">
+                                                What's Included
+                                                <button
+                                                    onClick={() => setWhatsIncluded([...whatsIncluded, ''])}
+                                                    className="text-[10px] text-brand-600 hover:text-brand-700 font-bold uppercase"
+                                                >+ Add Item</button>
+                                            </label>
+                                            <div className="space-y-2">
+                                                {whatsIncluded.map((item, idx) => (
+                                                    <div key={idx} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(e) => {
+                                                                const newItems = [...whatsIncluded];
+                                                                newItems[idx] = e.target.value;
+                                                                setWhatsIncluded(newItems);
+                                                            }}
+                                                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium"
+                                                        />
+                                                        <button
+                                                            onClick={() => setWhatsIncluded(whatsIncluded.filter((_, i) => i !== idx))}
+                                                            className="text-slate-400 hover:text-rose-500"
+                                                        >×</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium text-slate-700 flex justify-between">
+                                                Need to Know
+                                                <button
+                                                    onClick={() => setNeedToKnow([...needToKnow, ''])}
+                                                    className="text-[10px] text-brand-600 hover:text-brand-700 font-bold uppercase"
+                                                >+ Add Item</button>
+                                            </label>
+                                            <div className="space-y-2">
+                                                {needToKnow.map((item, idx) => (
+                                                    <div key={idx} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(e) => {
+                                                                const newItems = [...needToKnow];
+                                                                newItems[idx] = e.target.value;
+                                                                setNeedToKnow(newItems);
+                                                            }}
+                                                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium"
+                                                        />
+                                                        <button
+                                                            onClick={() => setNeedToKnow(needToKnow.filter((_, i) => i !== idx))}
+                                                            className="text-slate-400 hover:text-rose-500"
+                                                        >×</button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="space-y-1.5 pt-4">
-                                    <label className="text-sm font-medium text-slate-700">Welcome Message</label>
-                                    <textarea
-                                        value={welcomeMessage}
-                                        onChange={(e) => setWelcomeMessage(e.target.value)}
-                                        rows={3}
-                                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
-                                    ></textarea>
+                                    <div className="space-y-1.5 pt-4">
+                                        <label className="text-sm font-medium text-slate-700">Welcome Message</label>
+                                        <textarea
+                                            value={welcomeMessage}
+                                            onChange={(e) => setWelcomeMessage(e.target.value)}
+                                            rows={3}
+                                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                        ></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Booking Voucher Specific Sections */}
             {
@@ -1024,7 +1097,9 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
                                             >
                                                 <option value="">Select Meal Plan</option>
-                                                {MEAL_PLANS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                {mealPlans.filter(p => p.status === 'active').map(plan => (
+                                                    <option key={plan.id} value={plan.name}>{plan.name}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>

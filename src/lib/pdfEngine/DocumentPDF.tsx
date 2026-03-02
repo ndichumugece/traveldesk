@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import type { AgencySettings } from '../../hooks/useSettings';
+import { parseHtmlToPdf } from './RichTextParser';
 
 // Register fonts if needed, using standard fonts for now
 Font.register({
@@ -408,6 +409,33 @@ const styles = StyleSheet.create({
     inclusionText: {
         fontSize: 8,
         color: '#374151',
+    },
+    exclusionsTitle: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#be123c', // rose-700
+        marginTop: 15,
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#fecdd3', // rose-200
+        paddingBottom: 4,
+    },
+    exclusionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '30%',
+        marginBottom: 5,
+    },
+    xIcon: {
+        width: 8,
+        height: 8,
+        backgroundColor: '#e11d48', // rose-600
+        borderRadius: 2,
+        marginRight: 6,
+    },
+    exclusionText: {
+        fontSize: 8,
+        color: '#374151',
     }
 });
 
@@ -669,7 +697,7 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
 
                     {/* Inclusions Section */}
                     {metadata?.selectedInclusions && metadata.selectedInclusions.length > 0 && (
-                        <View style={{ marginBottom: 25 }}>
+                        <View style={{ marginBottom: 20 }}>
                             <Text style={styles.inclusionsTitle}>What's Included</Text>
                             <View style={styles.inclusionsGrid}>
                                 {metadata.selectedInclusions.map((item: string, idx: number) => (
@@ -682,21 +710,61 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         </View>
                     )}
 
+                    {/* Exclusions Section */}
+                    {metadata?.selectedExclusions && metadata.selectedExclusions.length > 0 && (
+                        <View style={{ marginBottom: 25 }}>
+                            <Text style={styles.exclusionsTitle}>What's Not Included</Text>
+                            <View style={styles.inclusionsGrid}>
+                                {metadata.selectedExclusions.map((item: string, idx: number) => (
+                                    <View key={idx} style={styles.exclusionItem}>
+                                        <View style={styles.xIcon} />
+                                        <Text style={styles.exclusionText}>{item}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
                     {/* Additional Notes */}
                     {metadata?.additionalNotes && (
                         <View style={{ marginTop: 10 }}>
                             <Text style={styles.sectionTitle}>Important Notes</Text>
-                            <Text style={styles.optionDescription}>{metadata.additionalNotes}</Text>
+                            <View style={{ marginTop: 5 }}>
+                                {parseHtmlToPdf(metadata.additionalNotes)}
+                            </View>
                         </View>
                     )}
 
                     {/* Sign-off if needed */}
                     <View style={{ marginTop: 'auto', paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f3f4f6' }}>
-                        <Text style={[styles.optionMeta, { textAlign: 'center' }]}>
+                        <Text style={[styles.optionMeta, { textAlign: 'center', marginBottom: 15 }]}>
                             This quotation is subject to availability at the time of booking.
                         </Text>
-                        {settings?.default_footer_note && (
-                            <Text style={[styles.footerNote, { borderTopWidth: 0, marginTop: 5 }]}>{settings.default_footer_note}</Text>
+
+                        {(settings?.payment_terms || settings?.default_terms || settings?.default_footer_note) && (
+                            <View style={{ marginTop: 10 }}>
+                                {settings.payment_terms && (
+                                    <View style={{ marginBottom: 15 }}>
+                                        <Text style={styles.notesTitle}>Payment Terms</Text>
+                                        <View style={{ marginTop: 5 }}>
+                                            {parseHtmlToPdf(settings.payment_terms)}
+                                        </View>
+                                    </View>
+                                )}
+                                {settings.default_terms && (
+                                    <View style={{ marginBottom: 15 }}>
+                                        <Text style={styles.notesTitle}>Terms & Conditions</Text>
+                                        <View style={{ marginTop: 5 }}>
+                                            {parseHtmlToPdf(settings.default_terms)}
+                                        </View>
+                                    </View>
+                                )}
+                                {settings.default_footer_note && (
+                                    <Text style={[styles.footerNote, { borderTopWidth: 0, marginTop: 5 }]}>
+                                        {settings.default_footer_note}
+                                    </Text>
+                                )}
+                            </View>
                         )}
                     </View>
                 </Page>
@@ -821,10 +889,24 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                 </View>
 
                 {/* Notes & Payment Details */}
-                {settings?.default_terms && (
+                {(settings?.payment_terms || settings?.default_terms) && (
                     <View style={styles.notesSection}>
-                        <Text style={styles.notesTitle}>Terms & Conditions</Text>
-                        <Text style={styles.notesText}>{settings.default_terms}</Text>
+                        {settings.payment_terms && (
+                            <View style={{ marginBottom: 15 }}>
+                                <Text style={styles.notesTitle}>Payment Terms</Text>
+                                <View style={{ marginTop: 5 }}>
+                                    {parseHtmlToPdf(settings.payment_terms)}
+                                </View>
+                            </View>
+                        )}
+                        {settings.default_terms && (
+                            <View>
+                                <Text style={styles.notesTitle}>Terms & Conditions</Text>
+                                <View style={{ marginTop: 5 }}>
+                                    {parseHtmlToPdf(settings.default_terms)}
+                                </View>
+                            </View>
+                        )}
                     </View>
                 )}
 

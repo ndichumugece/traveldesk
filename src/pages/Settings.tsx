@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Save, UploadCloud, Building2, Palette, FileText, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { supabase } from '../lib/supabase';
+import { RichTextEditor } from '../components/ui/RichTextEditor';
 
 export function Settings() {
     const [activeTab, setActiveTab] = useState('branding');
@@ -19,6 +20,7 @@ export function Settings() {
     const [logoUrl, setLogoUrl] = useState('');
     const [footerNote, setFooterNote] = useState('');
     const [terms, setTerms] = useState('');
+    const [paymentTerms, setPaymentTerms] = useState('');
 
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +36,7 @@ export function Settings() {
             setLogoUrl(settings.logo_url || '');
             setFooterNote(settings.default_footer_note || '');
             setTerms(settings.default_terms || '');
+            setPaymentTerms(settings.payment_terms || '');
         }
     }, [settings]);
 
@@ -50,6 +53,7 @@ export function Settings() {
             logo_url: logoUrl,
             default_footer_note: footerNote,
             default_terms: terms,
+            payment_terms: paymentTerms,
         };
         const { error } = await updateSettings(updates);
         setIsSaving(false);
@@ -306,28 +310,30 @@ export function Settings() {
                     )}
 
                     {activeTab === 'documents' && (
-                        <div className="max-w-xl space-y-6 animate-in fade-in">
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-slate-900 mb-4">PDF Footer & Terms</h3>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-medium text-slate-700">Default PDF Footer Note</label>
-                                    <textarea
-                                        rows={3}
-                                        value={footerNote}
-                                        onChange={(e) => setFooterNote(e.target.value)}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm text-slate-900 resize-none"
-                                    />
-                                    <p className="text-xs text-slate-500 mt-1">This text appears at the bottom of every generated PDF.</p>
+                        <div className="max-w-3xl space-y-8 animate-in fade-in">
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 mb-1">PDF Footer & Terms</h3>
+                                    <p className="text-sm text-slate-500 mb-6">Configure the default terms that appear on generated vouchers and quotations.</p>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-medium text-slate-700">Default Terms & Conditions (Quotations)</label>
-                                    <textarea
-                                        rows={4}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-900">Payment Terms</label>
+                                    <p className="text-xs text-slate-500 mb-2">Instructions and policies regarding payment schedules, methods, and deadlines.</p>
+                                    <RichTextEditor
+                                        value={paymentTerms}
+                                        onChange={setPaymentTerms}
+                                        placeholder="e.g. A 50% deposit is required to secure the booking..."
+                                    />
+                                </div>
+
+                                <div className="space-y-2 pt-4">
+                                    <label className="text-sm font-bold text-slate-900">Terms & Conditions</label>
+                                    <p className="text-xs text-slate-500 mb-2">General terms, cancellation policies, and liability clauses.</p>
+                                    <RichTextEditor
                                         value={terms}
-                                        onChange={(e) => setTerms(e.target.value)}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-sm text-slate-900 resize-none"
+                                        onChange={setTerms}
+                                        placeholder="e.g. Cancellations made within 30 days of travel..."
                                     />
                                 </div>
                             </div>

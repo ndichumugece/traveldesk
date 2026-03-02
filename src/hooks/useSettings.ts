@@ -12,6 +12,7 @@ export interface AgencySettings {
     logo_url: string;
     default_footer_note: string;
     default_terms: string;
+    payment_terms: string;
 }
 
 export function useSettings() {

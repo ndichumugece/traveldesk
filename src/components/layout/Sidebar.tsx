@@ -12,6 +12,12 @@ import {
     PanelLeftOpen,
     X,
     Settings2,
+    Car,
+    Ticket,
+    CheckCircle2,
+    XCircle,
+    Calculator,
+    Utensils,
 } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
 import { cn } from '../../lib/utils';
@@ -22,10 +28,11 @@ type NavItem = {
     href?: string;
     icon: any;
     subItems?: { name: string; href: string; icon?: any }[];
+    adminOnly?: boolean;
 };
 
 const navigation: NavItem[] = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard, adminOnly: true },
     { name: 'Properties', href: '/properties', icon: Building2 },
     {
         name: 'Bookings',
@@ -41,12 +48,15 @@ const navigation: NavItem[] = [
         name: 'Configuration',
         icon: Settings2,
         subItems: [
-            { name: 'Transport', href: '/transport' },
-            { name: 'Activities', href: '/activities' },
-            { name: 'Summertides', href: '/summertides' },
+            { name: 'Transport', href: '/transport', icon: Car },
+            { name: 'Activities', href: '/activities', icon: Ticket },
+            { name: 'Inclusions', href: '/inclusions', icon: CheckCircle2 },
+            { name: 'Exclusions', href: '/exclusions', icon: XCircle },
+            { name: 'Meal Plans', href: '/meal-plans', icon: Utensils },
+            { name: 'Summertides', href: '/summertides', icon: Calculator },
         ]
     },
-    { name: 'Users', href: '/users', icon: Users },
+    { name: 'Users', href: '/users', icon: Users, adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -67,7 +77,7 @@ function SidebarContent({
     onMobileClose: () => void;
     isMobile?: boolean;
 }) {
-    const { user, signOut } = useAuth();
+    const { user, signOut, isAdmin } = useAuth();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         'Bookings': true,
         'Configuration': true,
@@ -84,6 +94,8 @@ function SidebarContent({
     const handleNavClick = () => {
         if (isMobile) onMobileClose();
     };
+
+    const filteredNavigation = navigation.filter(item => !item.adminOnly || isAdmin);
 
     return (
         <div className="flex flex-col h-full bg-white/95 backdrop-blur-xl border-r border-slate-200/60 select-none">
@@ -108,7 +120,7 @@ function SidebarContent({
 
             {/* Navigation */}
             <nav className="flex flex-1 flex-col gap-1 p-3 overflow-y-auto overflow-x-hidden">
-                {navigation.map((item) => {
+                {filteredNavigation.map((item) => {
                     const isOpen = openMenus[item.name];
                     return item.subItems ? (
                         <div key={item.name} className="flex flex-col gap-1">
@@ -141,10 +153,11 @@ function SidebarContent({
                                                 onClick={handleNavClick}
                                                 className={({ isActive }) =>
                                                     cn(
-                                                        'flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 ease-in-out',
+                                                        'flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 ease-in-out',
                                                         isActive ? 'text-brand-700 font-semibold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                                                     )
                                                 }>
+                                                {subItem.icon && <subItem.icon size={14} className="shrink-0" />}
                                                 {subItem.name}
                                             </NavLink>
                                         </div>
@@ -177,19 +190,36 @@ function SidebarContent({
             <div className={cn('mt-auto p-3 border-t border-slate-200/60 bg-slate-50/50', isCollapsed ? 'flex flex-col items-center gap-2' : '')}>
                 {!isCollapsed ? (
                     <>
-                        <Link to="/settings" onClick={handleNavClick} className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-slate-100/80 transition-colors group cursor-pointer">
-                            <div className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0 group-hover:bg-brand-100 group-hover:text-brand-700 transition-colors">
-                                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                        {isAdmin && (
+                            <Link to="/settings" onClick={handleNavClick} className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl hover:bg-slate-100/80 transition-colors group cursor-pointer">
+                                <div className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0 group-hover:bg-brand-100 group-hover:text-brand-700 transition-colors">
+                                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-brand-600 transition-colors">
+                                        {user?.email?.split('@')[0] || 'User'}
+                                    </p>
+                                    <p className="text-xs text-slate-500 truncate" title={user?.email || ''}>
+                                        {user?.email || 'user@agency.com'}
+                                    </p>
+                                </div>
+                            </Link>
+                        )}
+                        {!isAdmin && (
+                            <div className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl">
+                                <div className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 shrink-0">
+                                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-slate-900 truncate">
+                                        {user?.email?.split('@')[0] || 'User'}
+                                    </p>
+                                    <p className="text-xs text-slate-500 truncate" title={user?.email || ''}>
+                                        {user?.email || 'user@agency.com'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-slate-900 truncate group-hover:text-brand-600 transition-colors">
-                                    {user?.email?.split('@')[0] || 'User'}
-                                </p>
-                                <p className="text-xs text-slate-500 truncate" title={user?.email || ''}>
-                                    {user?.email || 'user@agency.com'}
-                                </p>
-                            </div>
-                        </Link>
+                        )}
                         <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
                             <LogOut size={18} />
                             Sign out
@@ -197,9 +227,16 @@ function SidebarContent({
                     </>
                 ) : (
                     <>
-                        <Link to="/settings" title="Settings" className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 hover:bg-brand-100 hover:text-brand-700 transition-colors">
-                            {user?.email?.charAt(0).toUpperCase() || 'U'}
-                        </Link>
+                        {isAdmin && (
+                            <Link to="/settings" title="Settings" className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500 hover:bg-brand-100 hover:text-brand-700 transition-colors">
+                                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                            </Link>
+                        )}
+                        {!isAdmin && (
+                            <div title="Profile" className="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center font-bold text-slate-500">
+                                {user?.email?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                        )}
                         <button onClick={signOut} title="Sign out" className="flex items-center justify-center p-2 text-slate-500 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors">
                             <LogOut size={18} />
                         </button>
