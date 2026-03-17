@@ -3,11 +3,9 @@ import type { ReactNode } from 'react';
 
 interface AuthLayoutProps {
     children: ReactNode;
-    heading?: string;
-    subheading?: string;
 }
 
-export function AuthLayout({ children, heading, subheading }: AuthLayoutProps) {
+export function AuthLayout({ children }: AuthLayoutProps) {
     return (
         <div className="min-h-screen bg-white flex">
             {/* Left side */}
