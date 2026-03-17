@@ -16,6 +16,8 @@ const VEHICLE_TYPES = [
     { label: 'Van (9 seater)', value: 'van_9', capacity: 9 },
     { label: 'Van (13 seater)', value: 'van_13', capacity: 13 },
     { label: 'Bus (Rosa)', value: 'bus_rosa', capacity: 22 },
+    { label: 'Flight', value: 'flight', capacity: 1 },
+    { label: 'Train', value: 'train', capacity: 1 },
 ];
 
 export function TransportForm({ onDiscard, existingTransport }: TransportFormProps) {
