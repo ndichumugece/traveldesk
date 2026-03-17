@@ -27,7 +27,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col optimize-render">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full flex flex-col">
             <div className="p-6 border-b border-slate-100 shrink-0">
                 <h3 className="text-lg font-semibold text-slate-900">Recent Activity</h3>
                 <p className="text-sm text-slate-500">Latest operations and updates</p>

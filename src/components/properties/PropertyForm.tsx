@@ -53,8 +53,9 @@ const labelBase = 'block text-xs font-semibold text-slate-500 uppercase tracking
 
 export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps) {
     const [activeTab, setActiveTab] = useState('general');
-    const { addProperty, updatePropertyFull } = useProperties();
+    const { addProperty, updatePropertyFull, fetchPropertyDetails } = useProperties();
     const [isSaving, setIsSaving] = useState(false);
+    const [fullPropLoading, setFullPropLoading] = useState(false);
 
     const [name, setName] = useState(existingProperty?.name || '');
     const [location, setLocation] = useState(existingProperty?.location || '');
@@ -62,6 +63,19 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
     const [amenities, setAmenities] = useState(existingProperty?.amenities?.join(', ') || '');
 
     const [roomTypes, setRoomTypes] = useState<RoomType[]>(existingProperty?.room_types || []);
+
+    // Fetch full details if only slice was provided from list
+    useState(() => {
+        if (existingProperty?.id) {
+            setFullPropLoading(true);
+            fetchPropertyDetails(existingProperty.id).then(fullProp => {
+                if (fullProp) {
+                    setRoomTypes(fullProp.room_types || []);
+                }
+                setFullPropLoading(false);
+            });
+        }
+    });
 
     const [showRoomForm, setShowRoomForm] = useState(false);
     const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
@@ -164,7 +178,15 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="relative space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {fullPropLoading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-2xl">
+                    <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-10 h-10 animate-spin text-brand-600" />
+                        <p className="text-sm font-semibold text-slate-600">Loading property details...</p>
+                    </div>
+                </div>
+            )}
             {/* ── Page Header ──────────────────────────────────────────── */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -277,12 +299,12 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                                             <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-slate-100">
                                                 {rt.extra_adult_rate > 0 && (
                                                     <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                        <UserPlus className="w-3 h-3 text-slate-400" /> +${rt.extra_adult_rate} extra adult
+                                                        <UserPlus className="w-3 h-3 text-slate-400" /> +KSH {rt.extra_adult_rate} extra adult
                                                     </span>
                                                 )}
                                                 {rt.child_rate > 0 && (
                                                     <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                        <Users className="w-3 h-3 text-slate-400" /> +${rt.child_rate} child
+                                                        <Users className="w-3 h-3 text-slate-400" /> +KSH {rt.child_rate} child
                                                     </span>
                                                 )}
                                                 {rt.infants_free && (

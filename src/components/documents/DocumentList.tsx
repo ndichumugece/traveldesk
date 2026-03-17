@@ -5,13 +5,12 @@ import type { Document } from '../../hooks/useDocuments';
 
 export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () => void, onEdit: (doc: Document) => void, typeFilter?: string | null }) {
     const [searchTerm, setSearchTerm] = useState('');
-    const { documents, loading } = useDocuments();
+    const { documents, loading, loadingMore, hasMore, loadMore } = useDocuments(typeFilter);
 
     const filteredDocs = documents.filter(doc => {
         const matchesSearch = doc.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
             doc.client.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesType = !typeFilter || doc.type === typeFilter;
-        return matchesSearch && matchesType;
+        return matchesSearch;
     });
 
     const getStatusColor = (status: string) => {
@@ -120,7 +119,7 @@ export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () =>
                                     </td>
                                     {typeFilter !== 'Booking' && typeFilter !== 'Voucher' && (
                                         <td className="py-4 px-6 text-sm font-semibold text-slate-900">
-                                            ${doc.amount.toLocaleString()}
+                                            KSH {doc.amount.toLocaleString()}
                                         </td>
                                     )}
                                     <td className="py-4 px-6 text-sm text-slate-500">
@@ -136,6 +135,26 @@ export function DocumentList({ onCreate, onEdit, typeFilter }: { onCreate: () =>
                         </tbody>
                     </table>
                 </div>
+
+                {!loading && hasMore && (
+                    <div className="p-4 border-t border-slate-100 flex justify-center">
+                        <button
+                            onClick={loadMore}
+                            disabled={loadingMore}
+                            className="flex items-center gap-2 text-brand-600 hover:text-brand-700 font-medium px-4 py-2 rounded-xl hover:bg-brand-50 transition-all disabled:opacity-50"
+                        >
+                            {loadingMore ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Loading more...
+                                </>
+                            ) : (
+                                'Load More'
+                            )}
+                        </button>
+                    </div>
+                )}
+
                 {!loading && filteredDocs.length === 0 && (
                     <div className="p-12 text-center text-slate-500">
                         <FileText className="mx-auto h-12 w-12 text-slate-300 mb-4" />

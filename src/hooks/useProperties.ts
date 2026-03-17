@@ -57,30 +57,13 @@ export const useProperties = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchProperties();
-    }, []);
-
     const fetchProperties = async () => {
         try {
             setLoading(true);
+            // Only fetch baseline property data for list view
             const { data, error } = await supabase
                 .from('properties')
-                .select(`
-                    id, name, location, base_price, rooms, status, amenities,
-                    room_types (
-                        id, name, capacity, price_modifier, occupancy_type, rate_type, 
-                        price_sgl, price_dbl, price_twn, price_tpl, price_quad, 
-                        extra_adult_rate, child_rate, infants_free, property_id,
-                        seasonal_pricing (
-                            id, name, start_date, end_date, pricing_type, markup_percentage, 
-                            price_sgl, price_dbl, price_twn, price_tpl, price_quad, property_id, room_type_id
-                        )
-                    ),
-                    seasonal_pricing (
-                        id, name, start_date, end_date, pricing_type, markup_percentage, property_id
-                    )
-                `)
+                .select('id, name, location, base_price, rooms, status, amenities')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -92,13 +75,46 @@ export const useProperties = () => {
         }
     };
 
+    const fetchPropertyDetails = async (id: string): Promise<Property | null> => {
+        try {
+            const { data, error } = await supabase
+                .from('properties')
+                .select(`
+                    id, name, location, base_price, rooms, status, amenities,
+                    room_types (
+                        id, name, capacity, price_modifier, occupancy_type, rate_type, 
+                        price_sgl, price_dbl, price_twn, price_tpl, price_quad, 
+                        extra_adult_rate, child_rate, infants_free, property_id,
+                        seasonal_pricing!room_type_id (
+                            id, name, start_date, end_date, pricing_type, markup_percentage, 
+                            price_sgl, price_dbl, price_twn, price_tpl, price_quad, property_id, room_type_id
+                        )
+                    ),
+                    seasonal_pricing!property_id (
+                        id, name, start_date, end_date, pricing_type, markup_percentage, property_id
+                    )
+                `)
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return data;
+        } catch (err) {
+            console.error('Error fetching property details:', err);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        fetchProperties();
+    }, []);
+
     const addProperty = async (
         property: Omit<Property, 'id' | 'room_types' | 'seasonal_pricing'>,
         roomTypes: RoomType[],
         seasonalPricing: SeasonalPricing[]
     ) => {
         try {
-            // 1. Insert main property
             const { data: propData, error: propError } = await supabase
                 .from('properties')
                 .insert([property])
@@ -106,15 +122,13 @@ export const useProperties = () => {
                 .single();
 
             if (propError) throw propError;
-
             const propertyId = propData.id;
 
-            // 2. Insert room types and their seasonal pricing
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
                     const { data: rtData, error: rtError } = await supabase
                         .from('room_types')
-                        .insert([{ ...rt, property_id: propertyId, seasonal_pricing: undefined }]) // Don't try to insert nested JSON
+                        .insert([{ ...rt, property_id: propertyId, seasonal_pricing: undefined }])
                         .select()
                         .single();
 
@@ -122,16 +136,7 @@ export const useProperties = () => {
 
                     if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
                         const spToInsert = rt.seasonal_pricing.map(sp => ({
-                            name: sp.name,
-                            start_date: sp.start_date,
-                            end_date: sp.end_date,
-                            pricing_type: sp.pricing_type || 'percentage',
-                            markup_percentage: sp.markup_percentage || 0,
-                            price_sgl: sp.price_sgl ?? null,
-                            price_dbl: sp.price_dbl ?? null,
-                            price_twn: sp.price_twn ?? null,
-                            price_tpl: sp.price_tpl ?? null,
-                            price_quad: sp.price_quad ?? null,
+                            ...sp,
                             property_id: propertyId,
                             room_type_id: rtData.id
                         }));
@@ -141,14 +146,13 @@ export const useProperties = () => {
                 }
             }
 
-            // 3. Insert global seasonal pricing (if still used)
             if (seasonalPricing.length > 0) {
                 const spToInsert = seasonalPricing.map(sp => ({ ...sp, property_id: propertyId }));
                 const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
                 if (spError) throw spError;
             }
 
-            fetchProperties(); // Refresh to get the fully joined object
+            fetchProperties();
             return { data: propData, error: null };
         } catch (err: any) {
             return { data: null, error: err.message };
@@ -162,7 +166,6 @@ export const useProperties = () => {
         seasonalPricing: SeasonalPricing[]
     ) => {
         try {
-            // 1. Update main property
             const { data: propData, error: propError } = await supabase
                 .from('properties')
                 .update({
@@ -179,29 +182,12 @@ export const useProperties = () => {
 
             if (propError) throw propError;
 
-            // 2. Replace room types (delete existing, insert new ones)
-            // Note: deleting room types will cascade delete their associated seasonal pricing
             await supabase.from('room_types').delete().eq('property_id', id);
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
                     const { data: rtData, error: rtError } = await supabase
                         .from('room_types')
-                        .insert([{
-                            name: rt.name,
-                            capacity: rt.capacity,
-                            price_modifier: rt.price_modifier,
-                            occupancy_type: rt.occupancy_type,
-                            rate_type: rt.rate_type,
-                            price_sgl: rt.price_sgl ?? null,
-                            price_dbl: rt.price_dbl ?? null,
-                            price_twn: rt.price_twn ?? null,
-                            price_tpl: rt.price_tpl ?? null,
-                            price_quad: rt.price_quad ?? null,
-                            extra_adult_rate: rt.extra_adult_rate,
-                            child_rate: rt.child_rate,
-                            infants_free: rt.infants_free,
-                            property_id: id
-                        }])
+                        .insert([{ ...rt, property_id: id, seasonal_pricing: undefined }])
                         .select()
                         .single();
 
@@ -209,16 +195,7 @@ export const useProperties = () => {
 
                     if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
                         const spToInsert = rt.seasonal_pricing.map(sp => ({
-                            name: sp.name,
-                            start_date: sp.start_date,
-                            end_date: sp.end_date,
-                            pricing_type: sp.pricing_type || 'percentage',
-                            markup_percentage: sp.markup_percentage || 0,
-                            price_sgl: sp.price_sgl ?? null,
-                            price_dbl: sp.price_dbl ?? null,
-                            price_twn: sp.price_twn ?? null,
-                            price_tpl: sp.price_tpl ?? null,
-                            price_quad: sp.price_quad ?? null,
+                            ...sp,
                             property_id: id,
                             room_type_id: rtData.id
                         }));
@@ -228,22 +205,17 @@ export const useProperties = () => {
                 }
             }
 
-            // 3. Replace global seasonal pricing
-            // Also delete top-level ones that don't belong to a room type
             await supabase.from('seasonal_pricing').delete().eq('property_id', id).is('room_type_id', null);
             if (seasonalPricing.length > 0) {
                 const spToInsert = seasonalPricing.map(sp => ({
-                    name: sp.name,
-                    start_date: sp.start_date,
-                    end_date: sp.end_date,
-                    markup_percentage: sp.markup_percentage,
+                    ...sp,
                     property_id: id
                 }));
                 const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
                 if (spError) throw spError;
             }
 
-            fetchProperties(); // Refresh to get joined data
+            fetchProperties();
             return { data: propData, error: null };
         } catch (err: any) {
             return { data: null, error: err.message };
@@ -252,15 +224,9 @@ export const useProperties = () => {
 
     const updateProperty = async (id: string, updates: Partial<Property>) => {
         try {
-            const { data, error } = await supabase
-                .from('properties')
-                .update(updates)
-                .eq('id', id)
-                .select()
-                .single();
-
+            const { data, error } = await supabase.from('properties').update(updates).eq('id', id).select().single();
             if (error) throw error;
-            fetchProperties(); // Refresh to get joined data if needed
+            fetchProperties();
             return { data, error: null };
         } catch (err: any) {
             return { data: null, error: err.message };
@@ -269,11 +235,7 @@ export const useProperties = () => {
 
     const deleteProperty = async (id: string) => {
         try {
-            const { error } = await supabase
-                .from('properties')
-                .delete()
-                .eq('id', id);
-
+            const { error } = await supabase.from('properties').delete().eq('id', id);
             if (error) throw error;
             setProperties(properties.filter(p => p.id !== id));
             return { error: null };
@@ -287,6 +249,7 @@ export const useProperties = () => {
         loading,
         error,
         refetch: fetchProperties,
+        fetchPropertyDetails,
         addProperty,
         updateProperty,
         updatePropertyFull,

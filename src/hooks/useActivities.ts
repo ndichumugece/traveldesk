@@ -27,7 +27,8 @@ export const useActivities = () => {
             const { data, error } = await supabase
                 .from('activities')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false })
+                .limit(100);
 
             if (error) throw error;
             setActivities(data || []);

@@ -23,10 +23,11 @@ const TRANSPORT_MODES = ['Self Drive', 'Train', 'Flying', 'Road Package'];
 // Removed hardcoded INCLUSION_OPTIONS to use dynamic data from database
 
 export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard: () => void, initialDoc?: Document | null, typeFilter?: string | null }) {
-    const { createDocument, updateDocument } = useDocuments();
+    const { createDocument, updateDocument, fetchDocumentById } = useDocuments();
     const { settings } = useSettings();
     const [isSaving, setIsSaving] = useState(false);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [fullDocLoading, setFullDocLoading] = useState(false);
 
     // Form State
     const today = new Date().toISOString().split('T')[0];
@@ -138,6 +139,52 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
             ? initialDoc.lineItems
             : [{ id: 1, description: '', quantity: 1, unitPrice: 0 }]
     );
+
+    // Fetch full details if only slice was provided from list
+    useState(() => {
+        if (initialDoc?.id) {
+            setFullDocLoading(true);
+            fetchDocumentById(initialDoc.id).then(fullDoc => {
+                if (fullDoc) {
+                    setLineItems(fullDoc.lineItems || []);
+                    if (fullDoc.metadata) {
+                        setUnitName(fullDoc.metadata.unitName || '');
+                        setNumGuests(fullDoc.metadata.numGuests || '');
+                        setGuestName(fullDoc.metadata.guestName || '');
+                        setGuestPhone(fullDoc.metadata.guestPhone || '');
+                        setGuestEmail(fullDoc.metadata.guestEmail || '');
+                        setRoomType(fullDoc.metadata.roomType || '');
+                        setMealPlan(fullDoc.metadata.mealPlan || '');
+                        setPaymentMethod(fullDoc.metadata.paymentMethod || 'Mobile Money');
+                        setCheckInTime(fullDoc.metadata.checkInTime || '2:00pm');
+                        setCheckOutTime(fullDoc.metadata.checkOutTime || '10:00am');
+                        setPropertyAddress(fullDoc.metadata.propertyAddress || 'Diani, Kenya');
+                        setGoogleMapsLink(fullDoc.metadata.googleMapsLink || 'https://maps.google.com/');
+                        setHostContact(fullDoc.metadata.hostContact || 'Coastal Soul Kenya');
+                        setContactPerson(fullDoc.metadata.contactPerson || 'Simulizi : +254794 703583');
+                        setWelcomeMessage(fullDoc.metadata.welcomeMessage || '');
+                        setWhatsIncluded(fullDoc.metadata.whatsIncluded || []);
+                        setNeedToKnow(fullDoc.metadata.needToKnow || []);
+                        setNationality(fullDoc.metadata.nationality || '');
+                        setAdditionalGuestInfo(fullDoc.metadata.additionalGuestInfo || '');
+                        setPackageType(fullDoc.metadata.packageType || '');
+                        setRooms(fullDoc.metadata.rooms || [{ roomType: '', adults: 2, children: 0, childAges: [], bedType: '' }]);
+                        setArrivalTransport(fullDoc.metadata.arrivalTransport || '');
+                        setDepartureTransport(fullDoc.metadata.departureTransport || '');
+                        setTransportNote(fullDoc.metadata.transportNote || '');
+                        setDietaryRequests(fullDoc.metadata.dietaryRequests || '');
+                        setSpecialRequests(fullDoc.metadata.specialRequests || '');
+                        setQuotationStatus(fullDoc.metadata.quotationStatus || 'Tentative');
+                        setHotelOptions(fullDoc.metadata.hotelOptions || [{ property: '', mealPlan: '', price: '', description: '' }]);
+                        setSelectedInclusions(fullDoc.metadata.selectedInclusions || []);
+                        setSelectedExclusions(fullDoc.metadata.selectedExclusions || []);
+                        setAdditionalNotes(fullDoc.metadata.additionalNotes || '');
+                    }
+                }
+                setFullDocLoading(false);
+            });
+        }
+    });
 
     const addLineItem = () => {
         setLineItems([...lineItems, { id: Date.now(), description: '', quantity: 1, unitPrice: 0 }]);
@@ -313,7 +360,15 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="relative space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {fullDocLoading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-2xl">
+                    <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-10 h-10 animate-spin text-brand-600" />
+                        <p className="text-sm font-semibold text-slate-600">Loading document details...</p>
+                    </div>
+                </div>
+            )}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <button
@@ -1422,7 +1477,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                                         className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                                                                     >
                                                                         <div className="font-semibold text-slate-900">{hotel.name}</div>
-                                                                        <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • ${hotel.base_price}/night</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • KSH {hotel.base_price}/night</div>
                                                                     </button>
                                                                 ))
                                                         )}
@@ -1460,7 +1515,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                                                                 >
                                                                     <div className="font-semibold text-slate-900">{activity.name}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">{activity.location} • ${activity.price}</div>
+                                                                    <div className="text-[10px] text-slate-500 font-normal">{activity.location} • KSH {activity.price}</div>
                                                                 </button>
                                                             ))
                                                         )}
@@ -1498,7 +1553,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                                     className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                                                                 >
                                                                     <div className="font-semibold text-slate-900">{transport.name}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">{transport.vehicle_type} • ${transport.price_per_way}</div>
+                                                                    <div className="text-[10px] text-slate-500 font-normal">{transport.vehicle_type} • KSH {transport.price_per_way}</div>
                                                                 </button>
                                                             ))
                                                         )}
@@ -1517,20 +1572,20 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                         </div>
                                         <div className="col-span-2">
                                             <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">$</span>
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-bold">KSH</span>
                                                 <input
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
                                                     value={item.unitPrice}
                                                     onChange={(e) => updateLineItem(item.id, 'unitPrice', Number(e.target.value))}
-                                                    className="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
+                                                    className="w-full bg-white border border-slate-200 rounded-lg pl-10 pr-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
                                                 />
                                             </div>
                                         </div>
                                         <div className="col-span-2 flex items-center justify-end gap-3 pr-2">
                                             <span className="font-semibold text-slate-900 text-sm">
-                                                ${(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                KSH {(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
                                             <button
                                                 onClick={() => removeLineItem(item.id)}
@@ -1554,11 +1609,11 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <div className="w-64 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                 <div className="flex justify-between text-sm font-medium text-slate-600">
                                     <span>Subtotal</span>
-                                    <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between text-base font-bold text-slate-900 border-t border-slate-200 pt-3">
                                     <span>Total Amount</span>
-                                    <span>${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         </div>

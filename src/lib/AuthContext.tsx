@@ -28,8 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const lastUserId = useRef<string | null>(null);
 
-    const fetchRole = async (userId: string, forceLoading = false) => {
-        if (forceLoading) setLoading(true);
+    const fetchRole = async (userId: string) => {
         try {
             const rolePromise = supabase
                 .from('profiles')
@@ -37,10 +36,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .eq('id', userId)
                 .single();
 
-            // Increase timeout to 45 seconds to handle cold starts or slow networks
+            // Short timeout for role fetch to avoid blocking UI features
             let timeoutId: ReturnType<typeof setTimeout>;
             const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => reject(new Error('fetchRole timeout')), 45000);
+                timeoutId = setTimeout(() => reject(new Error('fetchRole timeout')), 10000);
             });
 
             const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
@@ -59,8 +58,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.error('Error fetching user role:', error);
             }
             setRole(prev => prev || 'staff');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -73,10 +70,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (currentUser) {
                 lastUserId.current = currentUser.id;
-                fetchRole(currentUser.id, true);
-            } else {
-                setLoading(false);
+                fetchRole(currentUser.id);
             }
+            
+            // App is officially "loaded" once we know if there is a session or not
+            setLoading(false);
         }).catch(() => {
             setLoading(false);
         });
@@ -85,8 +83,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 const newUser = session?.user ?? null;
-
-                // Compare with previous user to avoid loops or redundant fetches
                 const userIdChanged = newUser?.id !== lastUserId.current;
 
                 setSession(session);
@@ -99,17 +95,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     return;
                 }
 
-                if (newUser && (userIdChanged || event === 'USER_UPDATED')) {
+                if (newUser && (userIdChanged || event === 'USER_UPDATED' || event === 'SIGNED_IN')) {
                     lastUserId.current = newUser.id;
-                    // Only show global loading if we don't have a role yet (initial sign in)
-                    // Subsequent refreshes (tab focus) happen in the background
-                    await fetchRole(newUser.id, userIdChanged);
+                    // Background fetch, don't await so we don't block the UI
+                    fetchRole(newUser.id);
+                    setLoading(false);
                 }
             }
         );
 
         return () => subscription.unsubscribe();
-    }, []); // No dependencies to avoid subscription loops
+    }, []);
 
     const signOut = useCallback(async () => {
         await supabase.auth.signOut();
@@ -125,7 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isAdmin: role === 'admin',
         signOut,
         loading,
-    }), [session, user, role, loading]);
+    }), [session, user, role, loading, signOut]);
 
     return (
         <AuthContext.Provider value={value}>
