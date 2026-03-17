@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
@@ -111,19 +111,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
     }, []); // No dependencies to avoid subscription loops
 
-    const value = {
+    const signOut = useCallback(async () => {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setRole(null);
+    }, []);
+
+    const value = useMemo(() => ({
         session,
         user,
         role,
         isAdmin: role === 'admin',
-        signOut: async () => {
-            await supabase.auth.signOut();
-            setSession(null);
-            setUser(null);
-            setRole(null);
-        },
+        signOut,
         loading,
-    };
+    }), [session, user, role, loading]);
 
     return (
         <AuthContext.Provider value={value}>

@@ -40,6 +40,11 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
   }
+
+  .optimize-render {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
 }
 
 @keyframes fadeSlideUp {
