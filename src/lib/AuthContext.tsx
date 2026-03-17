@@ -37,10 +37,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .eq('id', userId)
                 .single();
 
-            // Increase timeout to 15 seconds to handle cold starts or slow networks
+            // Increase timeout to 45 seconds to handle cold starts or slow networks
             let timeoutId: ReturnType<typeof setTimeout>;
             const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => reject(new Error('fetchRole timeout')), 15000);
+                timeoutId = setTimeout(() => reject(new Error('fetchRole timeout')), 45000);
             });
 
             const { data, error } = await Promise.race([rolePromise, timeoutPromise]) as any;
@@ -52,8 +52,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 setRole(prev => prev || 'staff');
             }
-        } catch (error) {
-            console.error('Error fetching user role:', error);
+        } catch (error: any) {
+            if (error?.message === 'fetchRole timeout') {
+                console.warn('User role fetch timed out, falling back to staff.');
+            } else {
+                console.error('Error fetching user role:', error);
+            }
             setRole(prev => prev || 'staff');
         } finally {
             setLoading(false);
