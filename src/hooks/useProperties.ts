@@ -66,7 +66,21 @@ export const useProperties = () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('properties')
-                .select('*, room_types(*, seasonal_pricing(*)), seasonal_pricing(*)')
+                .select(`
+                    id, name, location, base_price, rooms, status, amenities,
+                    room_types (
+                        id, name, capacity, price_modifier, occupancy_type, rate_type, 
+                        price_sgl, price_dbl, price_twn, price_tpl, price_quad, 
+                        extra_adult_rate, child_rate, infants_free, property_id,
+                        seasonal_pricing (
+                            id, name, start_date, end_date, pricing_type, markup_percentage, 
+                            price_sgl, price_dbl, price_twn, price_tpl, price_quad, property_id, room_type_id
+                        )
+                    ),
+                    seasonal_pricing (
+                        id, name, start_date, end_date, pricing_type, markup_percentage, property_id
+                    )
+                `)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

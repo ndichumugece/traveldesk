@@ -44,8 +44,19 @@ export const useDashboardStats = () => {
             try {
                 setLoading(true);
 
-                // Fetch current user profile
-                const { data: { user } } = await supabase.auth.getUser();
+                // Fetch current user profile and documents in parallel
+                const [userResponse, documentsResponse] = await Promise.all([
+                    supabase.auth.getUser(),
+                    supabase
+                        .from('documents')
+                        .select('id, type, status, amount, client_name, reference, issue_date, created_at')
+                        .order('created_at', { ascending: false })
+                ]);
+                
+                const user = userResponse.data.user;
+                const documents = documentsResponse.data;
+                const supabaseError = documentsResponse.error;
+
                 if (user) {
                     const { data: profile } = await supabase
                         .from('profiles')
@@ -57,13 +68,6 @@ export const useDashboardStats = () => {
                         setUserName(profile.full_name);
                     }
                 }
-
-                // Fetch all documents. For a production app this should be optimized
-                // typically with RPC calls, database views, or explicit start/end date ranges.
-                const { data: documents, error: supabaseError } = await supabase
-                    .from('documents')
-                    .select('*')
-                    .order('created_at', { ascending: false });
 
                 if (supabaseError) throw supabaseError;
 
