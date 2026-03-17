@@ -16,7 +16,6 @@ import {
     Ticket,
     CheckCircle2,
     XCircle,
-    Calculator,
     Utensils,
 } from 'lucide-react';
 import { useAuth } from '../../lib/AuthContext';
@@ -53,7 +52,6 @@ const navigation: NavItem[] = [
             { name: 'Inclusions', href: '/inclusions', icon: CheckCircle2 },
             { name: 'Exclusions', href: '/exclusions', icon: XCircle },
             { name: 'Meal Plans', href: '/meal-plans', icon: Utensils },
-            { name: 'Summertides', href: '/summertides', icon: Calculator },
         ]
     },
     { name: 'Users', href: '/users', icon: Users, adminOnly: true },

@@ -17,7 +17,6 @@ const Transport = lazy(() => import('./pages/Transport').then(module => ({ defau
 const Activities = lazy(() => import('./pages/Activities').then(module => ({ default: module.Activities })));
 const Inclusions = lazy(() => import('./pages/Inclusions').then(module => ({ default: module.Inclusions })));
 const Exclusions = lazy(() => import('./pages/Exclusions').then(module => ({ default: module.Exclusions })));
-const Summertides = lazy(() => import('./pages/Summertides').then(module => ({ default: module.Summertides })));
 const MealPlans = lazy(() => import('./pages/MealPlans').then(module => ({ default: module.MealPlans })));
 const EditProfile = lazy(() => import('./pages/admin/EditProfile').then(module => ({ default: module.EditProfile })));
 
@@ -61,7 +60,6 @@ function App() {
               <Route path="inclusions" element={<Inclusions />} />
               <Route path="exclusions" element={<Exclusions />} />
               <Route path="meal-plans" element={<MealPlans />} />
-              <Route path="summertides" element={<Summertides />} />
               <Route path="users/:id/edit" element={<ProtectedRoute requireAdmin={true}><EditProfile /></ProtectedRoute>} />
               <Route path="settings" element={<ProtectedRoute requireAdmin={true}><Settings /></ProtectedRoute>} />
             </Route>

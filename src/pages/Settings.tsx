@@ -233,10 +233,19 @@ export function Settings() {
                                 <div className="space-y-1.5">
                                     <label className="text-sm font-medium text-slate-700">Primary Color (Hex)</label>
                                     <div className="flex items-center gap-3">
-                                        <div
-                                            className="w-10 h-10 rounded-lg shadow-inner border border-black/10 shrink-0"
-                                            style={{ backgroundColor: primaryColor }}
-                                        />
+                                        <div className="relative group cursor-pointer">
+                                            <input
+                                                type="color"
+                                                value={primaryColor}
+                                                onChange={(e) => setPrimaryColor(e.target.value)}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                title="Choose color"
+                                            />
+                                            <div
+                                                className="w-10 h-10 rounded-lg shadow-inner border border-black/10 shrink-0 transition-transform group-hover:scale-105"
+                                                style={{ backgroundColor: primaryColor }}
+                                            />
+                                        </div>
                                         <input
                                             type="text"
                                             value={primaryColor}
