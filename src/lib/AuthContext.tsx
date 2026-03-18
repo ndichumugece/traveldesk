@@ -7,6 +7,7 @@ interface AuthContextType {
     user: User | null;
     role: string | null;
     isAdmin: boolean;
+    agencyId: string | null;
     signOut: () => Promise<void>;
     loading: boolean;
 }
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     role: null,
     isAdmin: false,
+    agencyId: null,
     signOut: async () => { },
     loading: true,
 });
@@ -24,6 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<string | null>(null);
+    const [agencyId, setAgencyId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     const lastUserId = useRef<string | null>(null);
@@ -32,7 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const rolePromise = supabase
                 .from('profiles')
-                .select('role')
+                .select('role, agency_id')
                 .eq('id', userId)
                 .single();
 
@@ -48,8 +51,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (error) throw error;
             if (data?.role) {
                 setRole(data.role);
+                setAgencyId(data.agency_id);
             } else {
                 setRole(prev => prev || 'staff');
+                setAgencyId(null);
             }
         } catch (error: any) {
             if (error?.message === 'fetchRole timeout') {
@@ -58,6 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.error('Error fetching user role:', error);
             }
             setRole(prev => prev || 'staff');
+            setAgencyId(null);
         }
     };
 
@@ -91,6 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 if (event === 'SIGNED_OUT') {
                     lastUserId.current = null;
                     setRole(null);
+                    setAgencyId(null);
                     setLoading(false);
                     return;
                 }
@@ -112,6 +119,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(null);
         setUser(null);
         setRole(null);
+        setAgencyId(null);
     }, []);
 
     const value = useMemo(() => ({
@@ -119,9 +127,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         role,
         isAdmin: role === 'admin',
+        agencyId,
         signOut,
         loading,
-    }), [session, user, role, loading, signOut]);
+    }), [session, user, role, agencyId, loading, signOut]);
 
     return (
         <AuthContext.Provider value={value}>

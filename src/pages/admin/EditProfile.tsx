@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Loader2, ArrowLeft, Save, User, Mail, Shield, Calendar, Clock } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, User, Mail, Shield, Calendar, Clock, Trash2 } from 'lucide-react';
+import { useUsers } from '../../hooks/useUsers';
 
 interface UserProfile {
     id: string;
@@ -20,6 +21,9 @@ export function EditProfile() {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { deleteUserProfile } = useUsers();
 
     // Form state
     const [fullName, setFullName] = useState('');
@@ -84,6 +88,23 @@ export function EditProfile() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!id) return;
+        setIsDeleting(true);
+        setError(null);
+
+        try {
+            await deleteUserProfile(id);
+            navigate('/users');
+        } catch (err: any) {
+            console.error('Error deleting user:', err);
+            setError(err.message || 'Failed to delete user profile.');
+            setShowDeleteConfirm(false);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -138,6 +159,15 @@ export function EditProfile() {
                         </div>
                         <h2 className="text-xl font-bold text-slate-900 break-words w-full">{user?.full_name || 'Unnamed User'}</h2>
                         <p className="text-slate-500 text-sm mb-6 break-all">{user?.email}</p>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="w-full mb-6 p-3 rounded-xl border border-red-100 bg-red-50/50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-2 text-xs font-bold"
+                        >
+                            <Trash2 size={14} />
+                            Delete Account
+                        </button>
 
                         <div className="w-full space-y-4 pt-6 border-t border-slate-100 text-left">
                             <div className="flex items-center gap-3 text-sm text-slate-600 bg-slate-50 p-2 rounded-xl">
@@ -242,6 +272,59 @@ export function EditProfile() {
                     </form>
                 </div>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+                        onClick={() => setShowDeleteConfirm(false)}
+                    />
+                    
+                    {/* Modal Content */}
+                    <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                        <div className="p-8 text-center">
+                            <div className="mx-auto w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
+                                <Trash2 className="w-8 h-8 text-red-500" />
+                            </div>
+                            
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Delete User Profile?</h3>
+                            <p className="text-slate-500 leading-relaxed mb-8">
+                                Are you sure you want to delete <span className="font-bold text-slate-900">{user?.full_name}</span>? 
+                                This action will remove their access and all associated profile data. This cannot be undone.
+                            </p>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                    className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-red-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Deleting Profile...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-5 h-5" />
+                                            Yes, Delete Profile
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    disabled={isDeleting}
+                                    className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all active:scale-[0.98]"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

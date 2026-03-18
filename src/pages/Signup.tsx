@@ -6,6 +6,7 @@ import { AuthLayout } from '../components/layout/AuthLayout';
 export function Signup() {
     const [searchParams] = useSearchParams();
     const [name, setName] = useState('');
+    const [agencyName, setAgencyName] = useState('');
     const [email, setEmail] = useState(searchParams.get('email') || '');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -24,6 +25,7 @@ export function Signup() {
                 options: {
                     data: {
                         full_name: name,
+                        agency_name: agencyName
                     }
                 }
             });
@@ -31,7 +33,8 @@ export function Signup() {
             if (error) throw error;
 
             if (data.user) {
-                navigate('/onboarding');
+                const isInvited = searchParams.get('email');
+                navigate(isInvited ? '/' : '/onboarding');
             }
         } catch (err: any) {
             setError(err.message || 'An error occurred during account creation.');
@@ -99,6 +102,28 @@ export function Signup() {
                             />
                         </div>
                     </div>
+
+                    {!searchParams.get('email') && (
+                        <div className="space-y-1.5">
+                            <label htmlFor="agency" className="block text-[13px] font-semibold text-[#111827]">
+                                Agency Name
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#9CA3AF]">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                </div>
+                                <input
+                                    id="agency"
+                                    name="agency"
+                                    type="text"
+                                    value={agencyName}
+                                    onChange={(e) => setAgencyName(e.target.value)}
+                                    className="block w-full pl-10 pr-3 py-2.5 bg-[#F9FAFB] border-0 rounded-xl text-[#111827] ring-1 ring-inset ring-[#F3F4F6] placeholder:text-[#9CA3AF] focus:ring-2 focus:ring-inset focus:ring-[#5438FF] sm:text-[14px] transition-all"
+                                    placeholder="Enter agency name"
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-1.5">
                         <label htmlFor="password" className="block text-[13px] font-semibold text-[#111827]">

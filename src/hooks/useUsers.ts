@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '../lib/AuthContext';
 
 export interface UserProfile {
     id: string;
@@ -16,6 +17,7 @@ export function useUsers() {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { agencyId } = useAuth();
 
     const fetchUsers = async () => {
         try {
@@ -92,7 +94,8 @@ export function useUsers() {
                 email,
                 role,
                 status: 'pending',
-                invited_by: userData.user?.id
+                invited_by: userData.user?.id,
+                agency_id: agencyId
             }, { onConflict: 'email' });
 
         if (inviteError) throw inviteError;
