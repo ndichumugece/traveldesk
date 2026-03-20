@@ -14,6 +14,7 @@ const Login = lazy(() => import('./pages/Login').then(module => ({ default: modu
 const Signup = lazy(() => import('./pages/Signup').then(module => ({ default: module.Signup })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => ({ default: module.ResetPassword })));
+const SignupSuccess = lazy(() => import('./pages/SignupSuccess').then(module => ({ default: module.SignupSuccess })));
 const Transport = lazy(() => import('./pages/Transport').then(module => ({ default: module.Transport })));
 const Activities = lazy(() => import('./pages/Activities').then(module => ({ default: module.Activities })));
 const Inclusions = lazy(() => import('./pages/Inclusions').then(module => ({ default: module.Inclusions })));
@@ -40,6 +41,7 @@ function App() {
             <Route path="/register" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/signup-success" element={<SignupSuccess />} />
 
             {/* Protected Routes */}
             <Route
