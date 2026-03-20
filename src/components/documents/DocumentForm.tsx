@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Save, Plus, Trash2, Loader2, Download, Eye, Check, X } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Trash2, Loader2, Download, Eye, Check, X, Car, Train, Plane, Building2, Home, Layout } from 'lucide-react';
 import { useDocuments } from '../../hooks/useDocuments';
 import type { Document } from '../../hooks/useDocuments';
 import { pdf } from '@react-pdf/renderer';
@@ -35,6 +35,8 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const [clientEmail, setClientEmail] = useState(initialDoc?.clientEmail || '');
     const [reference] = useState(initialDoc?.reference || `Q-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
     const [issueDate] = useState(initialDoc?.date || new Date().toISOString().split('T')[0]);
+    const [selectedCurrency, setSelectedCurrency] = useState(initialDoc?.currency || 'KSH');
+    const [exchangeRate, setExchangeRate] = useState(initialDoc?.exchangeRate || 1);
     const [checkIn, setCheckIn] = useState(initialDoc?.checkIn || '');
     const [checkOut, setCheckOut] = useState(initialDoc?.checkOut || '');
     const [documentType] = useState<string>(initialDoc?.type || typeFilter || 'Quotation');
@@ -91,7 +93,12 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
     const { inclusions } = useInclusions();
     const { exclusions } = useExclusions();
     const { mealPlans } = useMealPlans();
-    const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' | 'activity' | 'transport' } | null>(null);
+    const [activeSelection, setActiveSelection] = useState<{ id: number, type: 'category' | 'hotel' | 'room' | 'activity' | 'transport' | 'propSubCategory' } | null>(null);
+    const [propertyTypeFilter, setPropertyTypeFilter] = useState<'Hotel' | 'Villa' | 'Apartment' | null>(null);
+    const [selectedHotelForRooms, setSelectedHotelForRooms] = useState<any | null>(null);
+    const [transportCategory, setTransportCategory] = useState<'Road' | 'Train' | 'Flight'>('Road');
+    const [transportSearch, setTransportSearch] = useState('');
+    const [activitySearch, setActivitySearch] = useState('');
     const [hotelSearch, setHotelSearch] = useState('');
     const [activeHotelSearchIndex, setActiveHotelSearchIndex] = useState<number | null>(null);
     const [hotelOptionSearch, setHotelOptionSearch] = useState('');
@@ -226,6 +233,8 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         bookingId, quotationStatus, hotelOptions, selectedInclusions, selectedExclusions, additionalNotes
                     } : {}}
                     settings={settings}
+                    currency={selectedCurrency}
+                    exchangeRate={exchangeRate}
                 />
             );
             const blob = await pdf(doc).toBlob();
@@ -267,6 +276,8 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                         bookingId, quotationStatus, hotelOptions, selectedInclusions, selectedExclusions, additionalNotes
                     } : {}}
                     settings={settings}
+                    currency={selectedCurrency}
+                    exchangeRate={exchangeRate}
                 />
             );
 
@@ -331,7 +342,9 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                 check_in: checkIn || null,
                 check_out: checkOut || null,
                 line_items: lineItems,
-                metadata: metadata
+                metadata: metadata,
+                currency: selectedCurrency,
+                exchange_rate: exchangeRate
             });
             errorMsg = error;
         } else {
@@ -346,7 +359,9 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                 check_in: checkIn || null,
                 check_out: checkOut || null,
                 line_items: lineItems,
-                metadata: metadata
+                metadata: metadata,
+                currency: selectedCurrency,
+                exchange_rate: exchangeRate
             });
             errorMsg = error;
         }
@@ -456,6 +471,42 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <div className="space-y-4">
                                 <h3 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-2">Document Details</h3>
                                 <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Currency</label>
+                                            <div className="flex gap-2">
+                                                <select
+                                                    value={selectedCurrency}
+                                                    onChange={(e) => {
+                                                        const code = e.target.value;
+                                                        setSelectedCurrency(code);
+                                                        if (code === 'KSH') {
+                                                            setExchangeRate(1);
+                                                        } else {
+                                                            const rate = settings?.currency_config?.find(c => c.code === code)?.rate || 1;
+                                                            setExchangeRate(rate);
+                                                        }
+                                                    }}
+                                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900"
+                                                >
+                                                    <option value="KSH">KSH (Kenyan Shilling)</option>
+                                                    {settings?.currency_config?.map(curr => (
+                                                        <option key={curr.code} value={curr.code}>{curr.code} ({curr.name})</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-medium text-slate-700">Exchange Rate (1 {selectedCurrency} = ? KSH)</label>
+                                            <input
+                                                type="number"
+                                                value={exchangeRate}
+                                                readOnly={selectedCurrency === 'KSH'}
+                                                onChange={(e) => setExchangeRate(Number(e.target.value))}
+                                                className={`w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium text-slate-900 ${selectedCurrency === 'KSH' ? 'bg-slate-100 cursor-not-allowed text-slate-500' : 'bg-slate-50'}`}
+                                            />
+                                        </div>
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-sm font-medium text-slate-700">Check-in Date</label>
@@ -1399,12 +1450,14 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setActiveSelection({ id: item.id, type: 'hotel' });
+                                                                setActiveSelection({ id: item.id, type: 'propSubCategory' });
                                                             }}
                                                             className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
                                                         >
-                                                            <span className="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center text-xs group-hover:bg-amber-100 italic font-serif">H</span>
-                                                            Hotels
+                                                            <span className="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center text-xs group-hover:bg-amber-100">
+                                                                <Building2 className="w-3.5 h-3.5" />
+                                                            </span>
+                                                            Properties
                                                             <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
                                                         </button>
                                                         <button
@@ -1433,15 +1486,70 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                 </div>
                                             )}
 
+                                            {/* Properties Sub-category Dropdown */}
+                                            {activeSelection?.id === item.id && activeSelection?.type === 'propSubCategory' && (
+                                                <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="p-2 border-b border-slate-50 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Properties Category</span>
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveSelection({ id: item.id, type: 'category' });
+                                                        }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
+                                                    </div>
+                                                    <div className="p-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPropertyTypeFilter('Hotel');
+                                                                setActiveSelection({ id: item.id, type: 'hotel' });
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                        >
+                                                            <span className="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center text-xs group-hover:bg-amber-100 italic font-serif">H</span>
+                                                            Hotels
+                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPropertyTypeFilter('Villa');
+                                                                setActiveSelection({ id: item.id, type: 'hotel' });
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                        >
+                                                            <span className="w-6 h-6 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center text-xs group-hover:bg-purple-100">
+                                                                <Home className="w-3.5 h-3.5" />
+                                                            </span>
+                                                            Villas
+                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPropertyTypeFilter('Apartment');
+                                                                setActiveSelection({ id: item.id, type: 'hotel' });
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 group transition-colors"
+                                                        >
+                                                            <span className="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs group-hover:bg-indigo-100">
+                                                                <Layout className="w-3.5 h-3.5" />
+                                                            </span>
+                                                            Apartments
+                                                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-slate-200" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Hotel Selection Dropdown */}
-                                            {activeSelection?.id === item.id && activeSelection?.type === 'hotel' && (
+                                            {activeSelection?.id === item.id && (activeSelection?.type === 'hotel' || activeSelection?.type === 'room') && (
                                                 <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="p-2 border-b border-slate-50 flex items-center justify-between">
-                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Pick a Hotel</span>
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Pick a {propertyTypeFilter || 'Property'}</span>
                                                         <button onClick={(e) => {
                                                             e.stopPropagation();
                                                             setHotelSearch('');
-                                                            setActiveSelection({ id: item.id, type: 'category' });
+                                                            setActiveSelection({ id: item.id, type: 'propSubCategory' });
                                                         }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
                                                     </div>
                                                     <div className="p-2 bg-slate-50/50 border-b border-slate-100">
@@ -1455,24 +1563,21 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                         />
                                                     </div>
                                                     <div className="p-1 max-h-[212px] overflow-y-auto custom-scrollbar">
-                                                        {properties.filter(h => h.name.toLowerCase().includes(hotelSearch.toLowerCase())).length === 0 ? (
-                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No hotels found matching "{hotelSearch}"</div>
+                                                        {properties
+                                                            .filter(h => (!propertyTypeFilter || h.property_type === propertyTypeFilter))
+                                                            .filter(h => h.name.toLowerCase().includes(hotelSearch.toLowerCase())).length === 0 ? (
+                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No {propertyTypeFilter?.toLowerCase() || 'properties'} found matching "{hotelSearch}"</div>
                                                         ) : (
                                                             properties
+                                                                .filter(h => (!propertyTypeFilter || h.property_type === propertyTypeFilter))
                                                                 .filter(h => h.name.toLowerCase().includes(hotelSearch.toLowerCase()))
                                                                 .map(hotel => (
                                                                     <button
                                                                         key={hotel.id}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            const desc = `${hotel.name} (${nights} nights)`;
-                                                                            setLineItems(lineItems.map(li =>
-                                                                                li.id === item.id
-                                                                                    ? { ...li, description: desc, quantity: nights || 1, unitPrice: hotel.base_price }
-                                                                                    : li
-                                                                            ));
-                                                                            setHotelSearch('');
-                                                                            setActiveSelection(null);
+                                                                            setSelectedHotelForRooms(hotel);
+                                                                            setActiveSelection({ id: item.id, type: 'room' });
                                                                         }}
                                                                         className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                                                                     >
@@ -1480,6 +1585,65 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                                         <div className="text-[10px] text-slate-500 font-normal">{hotel.location} • KSH {hotel.base_price}/night</div>
                                                                     </button>
                                                                 ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Room Selection Dropdown */}
+                                            {activeSelection?.id === item.id && activeSelection?.type === 'room' && selectedHotelForRooms && (
+                                                <div className="absolute left-72 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-in fade-in slide-in-from-left-2 duration-200">
+                                                    <div className="p-2 border-b border-slate-50 flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 flex-1 truncate">Room: {selectedHotelForRooms.name}</span>
+                                                        <button onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveSelection({ id: item.id, type: 'hotel' });
+                                                        }} className="text-[10px] text-brand-600 hover:underline px-2 flex-shrink-0">Back</button>
+                                                    </div>
+                                                    <div className="p-1 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                                        {(!selectedHotelForRooms.room_types || selectedHotelForRooms.room_types.length === 0) ? (
+                                                            <div className="p-4 text-center text-slate-400 text-xs italic">
+                                                                No rooms defined.
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const desc = `${selectedHotelForRooms.name} (${nights} nights)`;
+                                                                        setLineItems(lineItems.map(li =>
+                                                                            li.id === item.id
+                                                                                ? { ...li, description: desc, quantity: nights || 1, unitPrice: selectedHotelForRooms.base_price }
+                                                                                : li
+                                                                        ));
+                                                                        setHotelSearch('');
+                                                                        setSelectedHotelForRooms(null);
+                                                                        setActiveSelection(null);
+                                                                    }}
+                                                                    className="block w-full mt-2 text-brand-600 font-bold hover:underline"
+                                                                >Use Base KSH {selectedHotelForRooms.base_price}</button>
+                                                            </div>
+                                                        ) : (
+                                                            selectedHotelForRooms.room_types.map((room: any) => (
+                                                                <button
+                                                                    key={room.id}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const desc = `${selectedHotelForRooms.name} - ${room.name} (${nights} nights)`;
+                                                                        const price = room.price_dbl || room.price_sgl || selectedHotelForRooms.base_price;
+                                                                        setLineItems(lineItems.map(li =>
+                                                                            li.id === item.id
+                                                                                ? { ...li, description: desc, quantity: nights || 1, unitPrice: price }
+                                                                                : li
+                                                                        ));
+                                                                        setHotelSearch('');
+                                                                        setSelectedHotelForRooms(null);
+                                                                        setActiveSelection(null);
+                                                                    }}
+                                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="font-semibold text-slate-900">{room.name}</div>
+                                                                    <div className="text-[10px] text-slate-500 font-normal">
+                                                                        {room.occupancy_type} • KSH {room.price_dbl || room.price_sgl || selectedHotelForRooms.base_price}
+                                                                    </div>
+                                                                </button>
+                                                            ))
                                                         )}
                                                     </div>
                                                 </div>
@@ -1495,29 +1659,52 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                             setActiveSelection({ id: item.id, type: 'category' });
                                                         }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
                                                     </div>
+                                                    {/* Search Input */}
+                                                    <div className="p-2 bg-slate-50/50 border-b border-slate-100">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search activities..."
+                                                            value={activitySearch}
+                                                            onChange={(e) => setActivitySearch(e.target.value)}
+                                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+
                                                     <div className="p-1 max-h-64 overflow-y-auto">
-                                                        {activities.length === 0 ? (
-                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No activities found. Add some in Activities first.</div>
+                                                        {activities.filter(a => 
+                                                            a.name.toLowerCase().includes(activitySearch.toLowerCase()) || 
+                                                            a.location.toLowerCase().includes(activitySearch.toLowerCase())
+                                                        ).length === 0 ? (
+                                                            <div className="p-4 text-center text-slate-400 text-xs italic">
+                                                                {activitySearch ? `No matches for "${activitySearch}"` : "No activities found. Add some in Activities first."}
+                                                            </div>
                                                         ) : (
-                                                            activities.map(activity => (
-                                                                <button
-                                                                    key={activity.id}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const desc = `Activity: ${activity.name}`;
-                                                                        setLineItems(lineItems.map(li =>
-                                                                            li.id === item.id
-                                                                                ? { ...li, description: desc, quantity: 1, unitPrice: activity.price }
-                                                                                : li
-                                                                        ));
-                                                                        setActiveSelection(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                                                >
-                                                                    <div className="font-semibold text-slate-900">{activity.name}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">{activity.location} • KSH {activity.price}</div>
-                                                                </button>
-                                                            ))
+                                                            activities
+                                                                .filter(a => 
+                                                                    a.name.toLowerCase().includes(activitySearch.toLowerCase()) || 
+                                                                    a.location.toLowerCase().includes(activitySearch.toLowerCase())
+                                                                )
+                                                                .map(activity => (
+                                                                    <button
+                                                                        key={activity.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const desc = `Activity: ${activity.name}`;
+                                                                            setLineItems(lineItems.map(li =>
+                                                                                li.id === item.id
+                                                                                    ? { ...li, description: desc, quantity: 1, unitPrice: activity.price }
+                                                                                    : li
+                                                                            ));
+                                                                            setActivitySearch('');
+                                                                            setActiveSelection(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                                                    >
+                                                                        <div className="font-semibold text-slate-900">{activity.name}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">{activity.location} • KSH {activity.price}</div>
+                                                                    </button>
+                                                                ))
                                                         )}
                                                     </div>
                                                 </div>
@@ -1533,29 +1720,77 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                                             setActiveSelection({ id: item.id, type: 'category' });
                                                         }} className="text-[10px] text-brand-600 hover:underline px-2">Back</button>
                                                     </div>
-                                                    <div className="p-1 max-h-64 overflow-y-auto">
-                                                        {transports.length === 0 ? (
-                                                            <div className="p-4 text-center text-slate-400 text-xs italic">No transport options found. Add some in Transport first.</div>
+
+                                                    {/* Category Tabs */}
+                                                    <div className="flex border-b border-slate-50 bg-slate-50/50">
+                                                        {[
+                                                            { name: 'Road', icon: Car },
+                                                            { name: 'Train', icon: Train },
+                                                            { name: 'Flight', icon: Plane }
+                                                        ].map((cat) => (
+                                                            <button
+                                                                key={cat.name}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setTransportCategory(cat.name as any);
+                                                                }}
+                                                                className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-bold uppercase tracking-tight transition-all relative ${transportCategory === cat.name ? 'text-brand-600 bg-white' : 'text-slate-400 hover:text-slate-600'}`}
+                                                            >
+                                                                <cat.icon className={`w-3.5 h-3.5 ${transportCategory === cat.name ? 'text-brand-600' : 'text-slate-400'}`} />
+                                                                {cat.name}
+                                                                {transportCategory === cat.name && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600" />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Search Input */}
+                                                    <div className="p-2 bg-slate-50/50 border-b border-slate-100">
+                                                        <input
+                                                            type="text"
+                                                            placeholder={`Search ${transportCategory.toLowerCase()}...`}
+                                                            value={transportSearch}
+                                                            onChange={(e) => setTransportSearch(e.target.value)}
+                                                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+
+                                                    <div className="p-1 max-h-64 overflow-y-auto custom-scrollbar">
+                                                        {transports.filter(t => 
+                                                            (t.category || 'Road') === transportCategory && 
+                                                            (t.name.toLowerCase().includes(transportSearch.toLowerCase()) || 
+                                                            t.vehicle_type.toLowerCase().includes(transportSearch.toLowerCase()))
+                                                        ).length === 0 ? (
+                                                            <div className="p-6 text-center text-slate-400 text-xs italic">
+                                                                {transportSearch ? `No matches for "${transportSearch}"` : `No ${transportCategory} options found.`}
+                                                            </div>
                                                         ) : (
-                                                            transports.map(transport => (
-                                                                <button
-                                                                    key={transport.id}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        const desc = `Transport: ${transport.name} (${transport.vehicle_type})`;
-                                                                        setLineItems(lineItems.map(li =>
-                                                                            li.id === item.id
-                                                                                ? { ...li, description: desc, quantity: 1, unitPrice: transport.price_per_way }
-                                                                                : li
-                                                                        ));
-                                                                        setActiveSelection(null);
-                                                                    }}
-                                                                    className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                                                >
-                                                                    <div className="font-semibold text-slate-900">{transport.name}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-normal">{transport.vehicle_type} • KSH {transport.price_per_way}</div>
-                                                                </button>
-                                                            ))
+                                                            transports
+                                                                .filter(t => 
+                                                                    (t.category || 'Road') === transportCategory && 
+                                                                    (t.name.toLowerCase().includes(transportSearch.toLowerCase()) || 
+                                                                    t.vehicle_type.toLowerCase().includes(transportSearch.toLowerCase()))
+                                                                )
+                                                                .map(transport => (
+                                                                    <button
+                                                                        key={transport.id}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            const desc = `${transportCategory}: ${transport.name} (${transport.vehicle_type})`;
+                                                                            setLineItems(lineItems.map(li =>
+                                                                                li.id === item.id
+                                                                                    ? { ...li, description: desc, quantity: 1, unitPrice: transport.price_per_way }
+                                                                                    : li
+                                                                            ));
+                                                                            setTransportSearch('');
+                                                                            setActiveSelection(null);
+                                                                        }}
+                                                                        className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors group"
+                                                                    >
+                                                                        <div className="font-semibold text-slate-900 group-hover:text-brand-600 transition-colors">{transport.name}</div>
+                                                                        <div className="text-[10px] text-slate-500 font-normal">{transport.vehicle_type} • KSH {transport.price_per_way}</div>
+                                                                    </button>
+                                                                ))
                                                         )}
                                                     </div>
                                                 </div>
@@ -1585,7 +1820,7 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                                         </div>
                                         <div className="col-span-2 flex items-center justify-end gap-3 pr-2">
                                             <span className="font-semibold text-slate-900 text-sm">
-                                                KSH {(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                {selectedCurrency} {((item.quantity * item.unitPrice) / exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </span>
                                             <button
                                                 onClick={() => removeLineItem(item.id)}
@@ -1609,11 +1844,11 @@ export function DocumentForm({ onDiscard, initialDoc, typeFilter }: { onDiscard:
                             <div className="w-64 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                                 <div className="flex justify-between text-sm font-medium text-slate-600">
                                     <span>Subtotal</span>
-                                    <span>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>{selectedCurrency} {(subtotal / exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between text-base font-bold text-slate-900 border-t border-slate-200 pt-3">
                                     <span>Total Amount</span>
-                                    <span>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>{selectedCurrency} {(subtotal / exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
                         </div>

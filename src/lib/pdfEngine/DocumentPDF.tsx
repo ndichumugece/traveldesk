@@ -457,10 +457,13 @@ interface DocumentPDFProps {
     lineItems: LineItem[];
     metadata?: any;
     settings?: AgencySettings | null;
+    currency?: string;
+    exchangeRate?: number;
 }
 
-export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, date, checkIn, checkOut, lineItems, metadata, settings }: DocumentPDFProps) => {
+export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, date, checkIn, checkOut, lineItems, metadata, settings, currency = 'KSH', exchangeRate = 1 }: DocumentPDFProps) => {
     const subtotal = lineItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    const convertedSubtotal = currency === 'KSH' ? subtotal : (subtotal / exchangeRate);
     const primaryColor = settings?.primary_color || '#3f3f3f';
 
     // We will extract the hotel/main description from the first line item to display under the Billed To section
@@ -792,7 +795,7 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         <Text style={styles.documentRef}># {reference}</Text>
                         <View style={styles.balanceDueBox}>
                             <Text style={styles.balanceDueLabel}>Balance Due</Text>
-                            <Text style={styles.balanceDueAmount}>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.balanceDueAmount}>{currency} {convertedSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                     </View>
                 </View>
@@ -859,13 +862,13 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                         <Text style={styles.thAmount}>Amount</Text>
                     </View>
 
-                    {lineItems.map((item, index) => (
-                        <View key={item.id || index} style={styles.tableRow}>
-                            <Text style={styles.tdIndex}>{index + 1}</Text>
+                    {lineItems.map((item, idx) => (
+                        <View key={item.id} style={styles.tableRow}>
+                            <Text style={styles.tdIndex}>{idx + 1}</Text>
                             <Text style={styles.tdDesc}>{item.description}</Text>
-                            <Text style={styles.tdQty}>{item.quantity.toFixed(2)}</Text>
-                            <Text style={styles.tdRate}>{item.unitPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
-                            <Text style={styles.tdAmount}>{(item.quantity * item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.tdQty}>{item.quantity}</Text>
+                            <Text style={styles.tdRate}>{(item.unitPrice / exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.tdAmount}>{(item.quantity * (item.unitPrice / exchangeRate)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                     ))}
                 </View>
@@ -874,12 +877,16 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                 <View style={styles.totalsArea}>
                     <View style={styles.totalsBox}>
                         <View style={styles.totalRow}>
-                            <Text style={styles.totalLabel}>Sub Total</Text>
-                            <Text style={styles.totalValue}>{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                            <Text style={styles.totalLabel}>Subtotal</Text>
+                            <Text style={styles.totalValue}>{currency} {convertedSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
-                        <View style={styles.totalRowNoBorder}>
-                            <Text style={styles.totalLabel}>Total</Text>
-                            <Text style={styles.totalValueBold}>KSH {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                        <View style={styles.totalRow}>
+                            <Text style={styles.totalLabel}>Tax (0%)</Text>
+                            <Text style={styles.totalValue}>{currency} 0.00</Text>
+                        </View>
+                        <View style={styles.balanceGrounded}>
+                            <Text style={styles.totalLabel}>Total Amount</Text>
+                            <Text style={styles.totalValueBold}>{currency} {convertedSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </View>
                         <View style={styles.balanceGrounded}>
                             <Text style={styles.totalLabel}>Balance Due</Text>

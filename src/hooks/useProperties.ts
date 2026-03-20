@@ -46,6 +46,10 @@ export interface Property {
     location: string;
     base_price: number;
     rooms: number;
+    property_type?: 'Hotel' | 'Villa' | 'Apartment';
+    bedrooms?: number;
+    bathrooms?: number;
+    max_guests?: number;
     status: 'active' | 'inactive';
     amenities: string[];
     room_types?: RoomType[];
@@ -63,7 +67,7 @@ export const useProperties = () => {
             // Only fetch baseline property data for list view
             const { data, error } = await supabase
                 .from('properties')
-                .select('id, name, location, base_price, rooms, status, amenities')
+                .select('id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities, room_types(id, name, capacity, price_modifier, occupancy_type, rate_type, price_sgl, price_dbl, price_twn, price_tpl, price_quad, extra_adult_rate, child_rate, infants_free, property_id)')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -77,31 +81,50 @@ export const useProperties = () => {
 
     const fetchPropertyDetails = async (id: string): Promise<Property | null> => {
         try {
-            const { data, error } = await supabase
+            // 1. Fetch Property + Room Types
+            const { data: prop, error: propError } = await supabase
                 .from('properties')
                 .select(`
-                    id, name, location, base_price, rooms, status, amenities,
+                    id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities,
                     room_types (
                         id, name, capacity, price_modifier, occupancy_type, rate_type, 
                         price_sgl, price_dbl, price_twn, price_tpl, price_quad, 
-                        extra_adult_rate, child_rate, infants_free, property_id,
-                        seasonal_pricing!room_type_id (
-                            id, name, start_date, end_date, pricing_type, markup_percentage, 
-                            price_sgl, price_dbl, price_twn, price_tpl, price_quad, property_id, room_type_id
-                        )
-                    ),
-                    seasonal_pricing!property_id (
-                        id, name, start_date, end_date, pricing_type, markup_percentage, property_id
+                        extra_adult_rate, child_rate, infants_free, property_id
                     )
                 `)
                 .eq('id', id)
                 .single();
 
-            if (error) throw error;
-            return data;
+            if (propError) throw propError;
+            if (!prop) return null;
+
+            // 2. Fetch ALL Seasonal Pricing for this property
+            const { data: seasons, error: seasonsError } = await supabase
+                .from('seasonal_pricing')
+                .select(`
+                    id, name, start_date, end_date, pricing_type, markup_percentage, 
+                    price_sgl, price_dbl, price_twn, price_tpl, price_quad, property_id, room_type_id
+                `)
+                .eq('property_id', id);
+
+            if (seasonsError) throw seasonsError;
+
+            // 3. Merge them
+            const property: Property = {
+                ...prop,
+                seasonal_pricing: seasons?.filter(s => !s.room_type_id) || [],
+                room_types: (prop.room_types || []).map(rt => ({
+                    ...rt,
+                    seasonal_pricing: seasons?.filter(s => s.room_type_id === rt.id) || []
+                }))
+            };
+
+            return property;
         } catch (err) {
             console.error('Error fetching property details:', err);
-            return null;
+            // If the error is specific to seasonal_pricing column, the user will see it here
+            // but let's re-throw so any higher-level handler (like an alert) catches it
+            throw err; 
         }
     };
 
@@ -126,19 +149,21 @@ export const useProperties = () => {
 
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
-                    const { data: rtData, error: rtError } = await supabase
+                    // Strictly exclude seasonal_pricing from the room_types table insert
+                    const { seasonal_pricing: rtSeasons, ...rtData } = rt;
+                    const { data: rtRecord, error: rtError } = await supabase
                         .from('room_types')
-                        .insert([{ ...rt, property_id: propertyId, seasonal_pricing: undefined }])
+                        .insert([{ ...rtData, property_id: propertyId }])
                         .select()
                         .single();
 
                     if (rtError) throw rtError;
 
-                    if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
-                        const spToInsert = rt.seasonal_pricing.map(sp => ({
+                    if (rtSeasons && rtSeasons.length > 0) {
+                        const spToInsert = rtSeasons.map(sp => ({
                             ...sp,
                             property_id: propertyId,
-                            room_type_id: rtData.id
+                            room_type_id: rtRecord.id
                         }));
                         const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
                         if (spError) throw spError;
@@ -173,6 +198,10 @@ export const useProperties = () => {
                     location: updates.location,
                     base_price: updates.base_price,
                     rooms: updates.rooms,
+                    property_type: updates.property_type,
+                    bedrooms: updates.bedrooms,
+                    bathrooms: updates.bathrooms,
+                    max_guests: updates.max_guests,
                     status: updates.status,
                     amenities: updates.amenities
                 })
@@ -185,19 +214,21 @@ export const useProperties = () => {
             await supabase.from('room_types').delete().eq('property_id', id);
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
-                    const { data: rtData, error: rtError } = await supabase
+                    // Strictly exclude seasonal_pricing from the room_types table insert
+                    const { seasonal_pricing: rtSeasons, ...rtData } = rt;
+                    const { data: rtRecord, error: rtError } = await supabase
                         .from('room_types')
-                        .insert([{ ...rt, property_id: id, seasonal_pricing: undefined }])
+                        .insert([{ ...rtData, property_id: id }])
                         .select()
                         .single();
 
                     if (rtError) throw rtError;
 
-                    if (rt.seasonal_pricing && rt.seasonal_pricing.length > 0) {
-                        const spToInsert = rt.seasonal_pricing.map(sp => ({
+                    if (rtSeasons && rtSeasons.length > 0) {
+                        const spToInsert = rtSeasons.map(sp => ({
                             ...sp,
                             property_id: id,
-                            room_type_id: rtData.id
+                            room_type_id: rtRecord.id
                         }));
                         const { error: spError } = await supabase.from('seasonal_pricing').insert(spToInsert);
                         if (spError) throw spError;

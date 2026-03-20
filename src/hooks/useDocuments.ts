@@ -15,6 +15,8 @@ export interface Document {
     checkOut?: string;
     lineItems: any[];
     metadata?: any;
+    currency: string;
+    exchangeRate: number;
     createdBy?: string;
     createdByEmail?: string;
 }
@@ -34,7 +36,7 @@ export function useDocuments(typeFilter: string | null = null) {
 
             let query = supabase
                 .from('documents')
-                .select('id, reference, type, client_name, client_email, amount, status, issue_date, created_at, check_in, check_out, profiles(full_name, email)')
+                .select('id, reference, type, client_name, client_email, amount, status, issue_date, created_at, check_in, check_out, currency, exchange_rate, profiles(full_name, email)')
                 .order('created_at', { ascending: false })
                 .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -70,6 +72,8 @@ export function useDocuments(typeFilter: string | null = null) {
                         checkOut: doc.check_out || '',
                         lineItems: [], // Excluded for performance in list
                         metadata: {}, // Excluded
+                        currency: doc.currency || 'KSH',
+                        exchangeRate: Number(doc.exchange_rate) || 1,
                         createdBy: profile?.full_name || 'Unknown User',
                         createdByEmail: profile?.email || ''
                     } as Document;
@@ -113,6 +117,8 @@ export function useDocuments(typeFilter: string | null = null) {
                     date: data.issue_date || data.created_at,
                     lineItems: data.line_items || [],
                     metadata: data.metadata || {},
+                    currency: data.currency || 'KSH',
+                    exchangeRate: Number(data.exchange_rate) || 1,
                     createdBy: data.profiles?.full_name || 'Unknown User',
                     createdByEmail: data.profiles?.email || ''
                 };

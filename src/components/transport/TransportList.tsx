@@ -1,4 +1,4 @@
-import { Search, Plus, Car, Edit, Trash2, Users } from 'lucide-react';
+import { Search, Plus, Car, Train, Plane, Edit, Trash2, Users } from 'lucide-react';
 import { useTransports, type Transport } from '../../hooks/useTransports';
 import { useState } from 'react';
 
@@ -13,12 +13,29 @@ export function TransportList({ onAdd, onEdit }: TransportListProps) {
 
     const filteredTransports = transports.filter(t =>
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.vehicle_type.toLowerCase().includes(searchQuery.toLowerCase())
+        t.vehicle_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.category || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this transport service?')) {
             await deleteTransport(id);
+        }
+    };
+
+    const getIcon = (category: string) => {
+        switch (category) {
+            case 'Train': return <Train className="w-5 h-5 text-brand-600" />;
+            case 'Flight': return <Plane className="w-5 h-5 text-brand-600" />;
+            default: return <Car className="w-5 h-5 text-brand-600" />;
+        }
+    };
+
+    const getSmallIcon = (category: string) => {
+        switch (category) {
+            case 'Train': return <Train className="w-3.5 h-3.5" />;
+            case 'Flight': return <Plane className="w-3.5 h-3.5" />;
+            default: return <Car className="w-3.5 h-3.5" />;
         }
     };
 
@@ -51,7 +68,7 @@ export function TransportList({ onAdd, onEdit }: TransportListProps) {
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                         type="text"
-                        placeholder="Search services or vehicle types..."
+                        placeholder="Search services, categories or types..."
                         className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -76,13 +93,13 @@ export function TransportList({ onAdd, onEdit }: TransportListProps) {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-slate-900">
                     {filteredTransports.map((transport) => (
                         <div key={transport.id} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300">
                             <div className="p-5">
                                 <div className="flex items-start justify-between gap-3 mb-4">
                                     <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                        <Car className="w-5 h-5 text-brand-600" />
+                                        {getIcon(transport.category)}
                                     </div>
                                     <div className="flex gap-2">
                                         <button
@@ -100,22 +117,33 @@ export function TransportList({ onAdd, onEdit }: TransportListProps) {
                                     </div>
                                 </div>
 
+                                <div className="mb-1">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded">
+                                        {transport.category || 'Road'}
+                                    </span>
+                                </div>
                                 <h3 className="font-bold text-slate-900 mb-1 group-hover:text-brand-600 transition-colors uppercase tracking-tight line-clamp-1">
                                     {transport.name}
                                 </h3>
 
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-1.5 text-xs text-slate-500 capitalize">
-                                        <Car className="w-3.5 h-3.5" />
-                                        <span>{transport.vehicle_type || 'Vehicle type not set'}</span>
-                                        <span className="mx-1">•</span>
-                                        <Users className="w-3.5 h-3.5" />
-                                        <span>Max {transport.capacity} Pax</span>
+                                        {getSmallIcon(transport.category)}
+                                        <span>{transport.vehicle_type || 'Package not set'}</span>
+                                        {transport.category === 'Road' && (
+                                            <>
+                                                <span className="mx-1">•</span>
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span>Max {transport.capacity} Pax</span>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-1.5 font-bold text-slate-900">
                                         <span className="text-emerald-600">KSH</span>
                                         <span className="text-lg">{transport.price_per_way.toLocaleString()}</span>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Per Way</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                                            {transport.category === 'Road' ? 'Per Way' : 'Total'}
+                                        </span>
                                     </div>
                                 </div>
 

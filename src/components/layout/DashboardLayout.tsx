@@ -31,7 +31,7 @@ export function DashboardLayout() {
                         aria-label="Open menu">
                         <Menu className="w-5 h-5" />
                     </button>
-                    <img src="/traveldesk-logo.png" alt="TravelDesk" className="h-8 w-auto mix-blend-multiply" />
+                    <img src="/traveldesk-logo.png" alt="TourOffice" className="h-8 w-auto mix-blend-multiply" />
                 </header>
 
                 <main className="flex-1 overflow-y-auto w-full transition-all duration-300 page-transition">

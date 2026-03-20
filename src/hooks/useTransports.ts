@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 export interface Transport {
     id: string;
     name: string;
+    category: 'Road' | 'Train' | 'Flight';
     vehicle_type: string;
     price_per_way: number;
     capacity: number;

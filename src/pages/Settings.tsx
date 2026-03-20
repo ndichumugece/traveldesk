@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, UploadCloud, Building2, Palette, FileText, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
+import { Save, UploadCloud, Building2, Palette, FileText, MapPin, Loader2, CheckCircle2, Coins, Trash2 } from 'lucide-react';
 import { useSettings } from '../hooks/useSettings';
 import { supabase } from '../lib/supabase';
 import { RichTextEditor } from '../components/ui/RichTextEditor';
@@ -21,6 +21,7 @@ export function Settings() {
     const [footerNote, setFooterNote] = useState('');
     const [terms, setTerms] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
+    const [currencyConfig, setCurrencyConfig] = useState<Array<{ code: string; name: string; rate: number }>>([]);
 
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +38,7 @@ export function Settings() {
             setFooterNote(settings.default_footer_note || '');
             setTerms(settings.default_terms || '');
             setPaymentTerms(settings.payment_terms || '');
+            setCurrencyConfig(settings.currency_config || []);
         }
     }, [settings]);
 
@@ -54,6 +56,7 @@ export function Settings() {
             default_footer_note: footerNote,
             default_terms: terms,
             payment_terms: paymentTerms,
+            currency_config: currencyConfig,
         };
         const { error } = await updateSettings(updates);
         setIsSaving(false);
@@ -166,6 +169,13 @@ export function Settings() {
                         >
                             <FileText className="w-4 h-4" />
                             Document Preferences
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('currency')}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'currency' ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
+                        >
+                            <Coins className="w-4 h-4" />
+                            Currency Settings
                         </button>
                     </nav>
                 </div>
@@ -344,6 +354,93 @@ export function Settings() {
                                         onChange={setTerms}
                                         placeholder="e.g. Cancellations made within 30 days of travel..."
                                     />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'currency' && (
+                        <div className="max-w-3xl space-y-8 animate-in fade-in">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 mb-1">Currency Exchange Rates</h3>
+                                <p className="text-sm text-slate-500 mb-6">Manage currencies available for your agency and their conversion rates relative to KSH.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-bold text-xs text-slate-400 uppercase tracking-widest px-4">
+                                    <div className="md:col-span-1">Currency</div>
+                                    <div className="md:col-span-1 text-right md:text-left">Rate (1 unit = ? KSH)</div>
+                                    <div className="md:col-span-1 flex justify-end">Actions</div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {currencyConfig.map((curr, idx) => (
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100 group transition-all hover:border-brand-200">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-brand-600 shadow-sm">
+                                                    {curr.code}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-slate-900">{curr.name}</p>
+                                                    <p className="text-[10px] text-slate-500">{curr.code}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={curr.rate}
+                                                    onChange={(e) => {
+                                                        const newConfig = [...currencyConfig];
+                                                        newConfig[idx].rate = Number(e.target.value);
+                                                        setCurrencyConfig(newConfig);
+                                                    }}
+                                                    className="w-full max-w-[120px] px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-bold text-slate-900"
+                                                />
+                                                <span className="text-xs font-bold text-slate-400 uppercase">KSH</span>
+                                            </div>
+                                            <div className="flex justify-end">
+                                                <button
+                                                    onClick={() => {
+                                                        setCurrencyConfig(currencyConfig.filter((_, i) => i !== idx));
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                                    title="Remove currency"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {currencyConfig.length === 0 && (
+                                        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                            <Coins className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                                            <p className="text-sm text-slate-500 italic">No custom currencies added yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-4">
+                                    <select 
+                                        className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (!val) return;
+                                            const [code, name] = val.split(':');
+                                            if (currencyConfig.some(c => c.code === code)) return;
+                                            setCurrencyConfig([...currencyConfig, { code, name, rate: 0 }]);
+                                            e.target.value = '';
+                                        }}
+                                    >
+                                        <option value="">Select a currency to add...</option>
+                                        <option value="USD:US Dollar">US Dollar (USD)</option>
+                                        <option value="EUR:Euro">Euro (EUR)</option>
+                                        <option value="GBP:British Pound">British Pound (GBP)</option>
+                                        <option value="TZS:Tanzanian Shilling">Tanzanian Shilling (TZS)</option>
+                                        <option value="UGX:Ugandan Shilling">Ugandan Shilling (UGX)</option>
+                                        <option value="ZAR:South African Rand">South African Rand (ZAR)</option>
+                                        <option value="AED:UAE Dirham">UAE Dirham (AED)</option>
+                                    </select>
+                                    <p className="text-xs text-slate-400">Add common currencies used by your agency.</p>
                                 </div>
                             </div>
                         </div>

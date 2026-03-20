@@ -61,8 +61,13 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
     const [location, setLocation] = useState(existingProperty?.location || '');
     const [basePrice, setBasePrice] = useState(existingProperty?.base_price?.toString() || '');
     const [amenities, setAmenities] = useState(existingProperty?.amenities?.join(', ') || '');
+    const [propertyType, setPropertyType] = useState<'Hotel' | 'Villa' | 'Apartment'>(existingProperty?.property_type || 'Hotel');
+    const [bedrooms, setBedrooms] = useState(existingProperty?.bedrooms?.toString() || '0');
+    const [bathrooms, setBathrooms] = useState(existingProperty?.bathrooms?.toString() || '0');
+    const [maxGuests, setMaxGuests] = useState(existingProperty?.max_guests?.toString() || '0');
 
     const [roomTypes, setRoomTypes] = useState<RoomType[]>(existingProperty?.room_types || []);
+    const [propSeasons, setPropSeasons] = useState<SeasonalPricing[]>(existingProperty?.seasonal_pricing || []);
 
     // Fetch full details if only slice was provided from list
     useState(() => {
@@ -71,6 +76,7 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
             fetchPropertyDetails(existingProperty.id).then(fullProp => {
                 if (fullProp) {
                     setRoomTypes(fullProp.room_types || []);
+                    setPropSeasons(fullProp.seasonal_pricing || []);
                 }
                 setFullPropLoading(false);
             });
@@ -111,14 +117,46 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
         setIsSaving(true);
         const pd = {
             name, location, base_price: Number(basePrice), rooms: roomTypes.length,
+            property_type: propertyType,
+            bedrooms: Number(bedrooms),
+            bathrooms: Number(bathrooms),
+            max_guests: Number(maxGuests),
             status: 'active' as const, amenities: amenities.split(',').map(a => a.trim()).filter(Boolean)
         };
         const res = existingProperty
-            ? await updatePropertyFull(existingProperty.id, pd, roomTypes, [])
-            : await addProperty(pd, roomTypes, []);
+            ? await updatePropertyFull(existingProperty.id, pd, roomTypes, propSeasons)
+            : await addProperty(pd, roomTypes, propSeasons);
         setIsSaving(false);
         if (res.error) alert('Error: ' + res.error);
         else onDiscard();
+    };
+
+    const confirmPropSeason = () => {
+        if (!spName || !spStart || !spEnd) return;
+        const s: SeasonalPricing = {
+            name: spName,
+            start_date: spStart,
+            end_date: spEnd,
+            pricing_type: spType,
+            markup_percentage: Number(spMarkup),
+            ...spPrices
+        };
+
+        if (editingSeasonIndex !== null) {
+            const u = [...propSeasons]; u[editingSeasonIndex] = s; setPropSeasons(u);
+            setEditingSeasonIndex(null);
+        } else {
+            setPropSeasons([...propSeasons, s]);
+        }
+        setSpName(''); setSpStart(''); setSpEnd(''); setSpMarkup('0'); setSpType('percentage');
+        setSpPrices({ price_sgl: null, price_dbl: null, price_twn: null, price_tpl: null, price_quad: null });
+        setShowSeasonForm(false);
+    };
+
+    const deletePropSeason = (i: number) => {
+        if (confirm('Delete this seasonal price?')) {
+            setPropSeasons(propSeasons.filter((_, idx) => idx !== i));
+        }
     };
 
     const confirmRoom = () => {
@@ -213,13 +251,14 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Tabs */}
                 <div className="flex border-b border-slate-100 bg-slate-50/50">
-                    {['General', 'Room Types'].map(tab => {
-                        const key = tab.toLowerCase().replace(' ', '-');
+                    {['General', propertyType === 'Hotel' ? 'Room Types' : 'Seasonal Pricing'].map(tab => {
+                        const key = tab.toLowerCase().includes('general') ? 'general' : 'room-types';
                         const active = activeTab === key;
+                        const label = tab;
                         return (
                             <button key={tab} onClick={() => setActiveTab(key)}
                                 className={`px-6 py-4 text-sm font-semibold transition-colors relative ${active ? 'text-brand-600 bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}>
-                                {tab}
+                                {label}
                                 {active && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-t-full" />}
                             </button>
                         );
@@ -240,21 +279,179 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                                 <input value={location} onChange={e => setLocation(e.target.value)} className={inputBase} placeholder="e.g. Maldives, Zanzibar" />
                             </div>
                             <div>
+                                <label className={labelBase}>Property Type</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {(['Hotel', 'Villa', 'Apartment'] as const).map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setPropertyType(t)}
+                                            className={`py-2 text-xs font-bold rounded-lg border transition-all ${propertyType === t ? 'bg-brand-50 border-brand-200 text-brand-600' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
                                 <label className={labelBase}>Base Price (KSH / night) *</label>
                                 <input type="number" value={basePrice} onChange={e => setBasePrice(e.target.value)} className={inputBase} placeholder="0.00" />
                             </div>
-                            <div>
+
+                            {propertyType === 'Villa' || propertyType === 'Apartment' ? (
+                                <>
+                                    <div>
+                                        <label className={labelBase}>Bedrooms</label>
+                                        <input type="number" value={bedrooms} onChange={e => setBedrooms(e.target.value)} className={inputBase} placeholder="0" />
+                                    </div>
+                                    <div>
+                                        <label className={labelBase}>Bathrooms</label>
+                                        <input type="number" value={bathrooms} onChange={e => setBathrooms(e.target.value)} className={inputBase} placeholder="0" />
+                                    </div>
+                                    <div>
+                                        <label className={labelBase}>Max Guests (Capacity)</label>
+                                        <input type="number" value={maxGuests} onChange={e => setMaxGuests(e.target.value)} className={inputBase} placeholder="0" />
+                                    </div>
+                                </>
+                            ) : null}
+
+                            <div className="sm:col-span-2">
                                 <label className={labelBase}>Amenities (comma-separated)</label>
-                                <input value={amenities} onChange={e => setAmenities(e.target.value)} className={inputBase} placeholder="WiFi, Pool, Spa, Gym" />
+                                <input value={amenities} onChange={e => setAmenities(e.target.value)} className={inputBase} placeholder="WiFi, Pool, Spa, Gym, Private Chef" />
                             </div>
                         </div>
                     )}
 
-                    {/* ── ROOM TYPES TAB ─────────────────────────────── */}
+                    {/* ── ROOM TYPES / DIRECT PRICING TAB ───────────────── */}
                     {activeTab === 'room-types' && (
                         <div className="space-y-4">
-                            {/* Existing room type cards */}
-                            {!showRoomForm && roomTypes.map((rt, i) => (
+                            {propertyType !== 'Hotel' && (
+                                <div className="mb-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-900">Seasonal Pricing</h3>
+                                            <p className="text-sm text-slate-500">Define price adjustments for different seasons.</p>
+                                        </div>
+                                        {!showSeasonForm && (
+                                            <button onClick={() => setShowSeasonForm(true)}
+                                                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all">
+                                                <Plus className="w-4 h-4" /> Add Season
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Standalone Season Form for Villas */}
+                                    {showSeasonForm && (
+                                        <div className="mb-6 p-6 border-2 border-amber-100 rounded-2xl bg-amber-50/30 space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h5 className="font-bold text-slate-900 text-xs uppercase tracking-widest">{editingSeasonIndex !== null ? 'Edit Season' : 'New Season'}</h5>
+                                                <button onClick={() => { setShowSeasonForm(false); setEditingSeasonIndex(null); }} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div className="sm:col-span-2">
+                                                    <label className={labelBase}>Season Name</label>
+                                                    <input value={spName} onChange={e => setSpName(e.target.value)} className={inputBase} placeholder="e.g. Peak Summer" />
+                                                </div>
+                                                <div>
+                                                    <label className={labelBase}>Start Date</label>
+                                                    <input type="date" value={spStart} onChange={e => setSpStart(e.target.value)} className={inputBase} />
+                                                </div>
+                                                <div>
+                                                    <label className={labelBase}>End Date</label>
+                                                    <input type="date" value={spEnd} onChange={e => setSpEnd(e.target.value)} className={inputBase} />
+                                                </div>
+
+                                                <div className="sm:col-span-2 bg-white rounded-xl border border-amber-100 p-1 flex">
+                                                    <button type="button" onClick={() => setSpType('percentage')}
+                                                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${spType === 'percentage' ? 'bg-amber-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
+                                                        Percentage Markup
+                                                    </button>
+                                                    <button type="button" onClick={() => setSpType('fixed')}
+                                                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${spType === 'fixed' ? 'bg-amber-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
+                                                        Fixed Prices
+                                                    </button>
+                                                </div>
+
+                                                {spType === 'percentage' ? (
+                                                    <div className="sm:col-span-2">
+                                                        <label className={labelBase}>Price Markup (%)</label>
+                                                        <input type="number" value={spMarkup} onChange={e => setSpMarkup(e.target.value)} className={inputBase} placeholder="e.g. 25" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="sm:col-span-2">
+                                                        <label className={labelBase}>Fixed Prices (KSH)</label>
+                                                        <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                                                            <div className="flex border-b border-slate-100 bg-slate-50">
+                                                                {PRICE_FIELDS.map(pf => (
+                                                                    <div key={pf.key} className="flex-1 py-2 text-center border-r border-slate-100 last:border-0">
+                                                                        <div className="text-[10px] font-bold text-slate-500 uppercase">{pf.short}</div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            <div className="flex">
+                                                                {PRICE_FIELDS.map((pf, idx) => (
+                                                                    <div key={pf.key} className="flex-1 py-2 px-1 border-r border-slate-100 last:border-0">
+                                                                        <input type="number" value={spPrices[pf.key] ?? ''}
+                                                                            onChange={e => setSpPrices(prev => ({ ...prev, [pf.key]: e.target.value === '' ? null : Number(e.target.value) }))}
+                                                                            className="w-full text-center text-sm font-bold bg-transparent focus:outline-none" placeholder="—" />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-3 pt-4 border-t border-amber-100">
+                                                <button onClick={confirmPropSeason} className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
+                                                    {editingSeasonIndex !== null ? 'Update Season' : 'Apply Season'}
+                                                </button>
+                                                <button onClick={() => { setShowSeasonForm(false); setEditingSeasonIndex(null); }} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white transition-colors">Cancel</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Standalone Seasons List for Villas */}
+                                    {!showSeasonForm && (
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {propSeasons.map((sp, idx) => (
+                                                <div key={idx} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                                    <div>
+                                                        <h5 className="font-bold text-slate-900 text-sm">{sp.name}</h5>
+                                                        <div className="flex items-center gap-3 mt-1">
+                                                            <p className="text-xs text-slate-500 font-medium">{sp.start_date} → {sp.end_date}</p>
+                                                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] uppercase ${sp.pricing_type === 'fixed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                                {sp.pricing_type === 'fixed' ? 'Fixed Prices' : `+${sp.markup_percentage}% Markup`}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => {
+                                                            setSpName(sp.name); setSpStart(sp.start_date); setSpEnd(sp.end_date);
+                                                            setSpType(sp.pricing_type || 'percentage'); setSpMarkup(sp.markup_percentage.toString());
+                                                            setSpPrices({ price_sgl: sp.price_sgl ?? null, price_dbl: sp.price_dbl ?? null, price_twn: sp.price_twn ?? null, price_tpl: sp.price_tpl ?? null, price_quad: sp.price_quad ?? null });
+                                                            setEditingSeasonIndex(idx); setShowSeasonForm(true);
+                                                        }} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-slate-50 rounded-lg transition-all">
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+                                                        <button onClick={() => deletePropSeason(idx)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {propSeasons.length === 0 && !showSeasonForm && (
+                                                <div className="text-center py-12 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-2xl">
+                                                    <TrendingUp className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                                                    <p className="text-sm font-semibold text-slate-500">No seasonal pricing defined yet.</p>
+                                                    <p className="text-xs text-slate-400 mt-1">Add peak or low season rates for this villa.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Existing room type cards (ONLY FOR HOTELS) */}
+                            {propertyType === 'Hotel' && !showRoomForm && roomTypes.map((rt, i) => (
                                 <div key={i} className="rounded-2xl border border-slate-200 overflow-hidden">
                                     {/* Card header */}
                                     <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-200">
@@ -568,7 +765,7 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
+                            ) : propertyType === 'Hotel' && (
                                 <button onClick={openNewRoom}
                                     className="w-full py-5 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:text-brand-600 hover:border-brand-300 hover:bg-brand-50/50 transition-all flex items-center justify-center gap-2 font-semibold">
                                     <Plus className="w-4 h-4" /> Add Room Type

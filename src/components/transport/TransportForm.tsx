@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Car, Train, Plane } from 'lucide-react';
 import { useTransports, type Transport } from '../../hooks/useTransports';
 
 interface TransportFormProps {
@@ -16,8 +16,24 @@ const VEHICLE_TYPES = [
     { label: 'Van (9 seater)', value: 'van_9', capacity: 9 },
     { label: 'Van (13 seater)', value: 'van_13', capacity: 13 },
     { label: 'Bus (Rosa)', value: 'bus_rosa', capacity: 22 },
-    { label: 'Flight', value: 'flight', capacity: 1 },
-    { label: 'Train', value: 'train', capacity: 1 },
+];
+
+const TRAIN_CLASSES = [
+    { label: 'Economy', value: 'economy' },
+    { label: 'First Class', value: 'first_class' },
+    { label: 'Premium Coach', value: 'premium_coach' },
+];
+
+const FLIGHT_CLASSES = [
+    { label: 'Economy', value: 'economy' },
+    { label: 'Business', value: 'business' },
+    { label: 'First Class', value: 'first_class' },
+];
+
+const CATEGORIES = [
+    { name: 'Road', icon: Car },
+    { name: 'Train', icon: Train },
+    { name: 'Flight', icon: Plane },
 ];
 
 export function TransportForm({ onDiscard, existingTransport }: TransportFormProps) {
@@ -25,6 +41,7 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
     const [isSaving, setIsSaving] = useState(false);
 
     const [name, setName] = useState(existingTransport?.name || '');
+    const [category, setCategory] = useState<'Road' | 'Train' | 'Flight'>(existingTransport?.category || 'Road');
     const [vehicleType, setVehicleType] = useState(existingTransport?.vehicle_type || '');
     const [pricePerWay, setPricePerWay] = useState(existingTransport?.price_per_way?.toString() || '');
     const [capacity, setCapacity] = useState(existingTransport?.capacity?.toString() || '4');
@@ -45,11 +62,19 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
         }
 
         setIsSaving(true);
-        // Find label for selection if matching predefined, otherwise use raw value
-        const displayType = VEHICLE_TYPES.find(v => v.value === vehicleType)?.label || vehicleType;
+        
+        let displayType = vehicleType;
+        if (category === 'Road') {
+            displayType = VEHICLE_TYPES.find(v => v.value === vehicleType)?.label || vehicleType;
+        } else if (category === 'Train') {
+            displayType = TRAIN_CLASSES.find(v => v.value === vehicleType)?.label || vehicleType;
+        } else if (category === 'Flight') {
+            displayType = FLIGHT_CLASSES.find(v => v.value === vehicleType)?.label || vehicleType;
+        }
 
         const transportData = {
             name,
+            category,
             vehicle_type: displayType,
             price_per_way: Number(pricePerWay),
             capacity: Number(capacity),
@@ -92,40 +117,96 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-900">
+                {/* Category Tabs */}
+                <div className="flex border-b border-slate-100 bg-slate-50/50">
+                    {CATEGORIES.map((cat) => (
+                        <button
+                            key={cat.name}
+                            onClick={() => {
+                                setCategory(cat.name as any);
+                                setVehicleType(''); // Reset sub-type when category changes
+                            }}
+                            className={`flex items-center gap-2 px-8 py-4 text-sm font-semibold transition-colors relative ${category === cat.name ? 'text-brand-600 bg-white' : 'text-slate-500 hover:text-slate-800 hover:bg-white/60'}`}
+                        >
+                            <cat.icon className={`w-4 h-4 ${category === cat.name ? 'text-brand-600' : 'text-slate-400'}`} />
+                            {cat.name}
+                            {category === cat.name && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-t-full" />}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="p-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="sm:col-span-2">
                             <label className={labelBase}>Service Name *</label>
                             <input value={name} onChange={e => setName(e.target.value)} className={inputBase} placeholder="e.g. Airport Transfer - Private" />
                         </div>
+
+                        {category === 'Road' && (
+                            <>
+                                <div>
+                                    <label className={labelBase}>Vehicle Type</label>
+                                    <select
+                                        value={vehicleType}
+                                        onChange={e => handleVehicleTypeChange(e.target.value)}
+                                        className={inputBase}
+                                    >
+                                        <option value="">Select Type</option>
+                                        {VEHICLE_TYPES.map(v => (
+                                            <option key={v.value} value={v.value}>{v.label}</option>
+                                        ))}
+                                        <option value="custom">Other / Custom</option>
+                                    </select>
+                                    {vehicleType === 'custom' && (
+                                        <input
+                                            className={`${inputBase} mt-2`}
+                                            placeholder="Enter custom type..."
+                                            onBlur={e => setVehicleType(e.target.value)}
+                                        />
+                                    )}
+                                </div>
+                                <div>
+                                    <label className={labelBase}>Capacity (Pax)</label>
+                                    <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} className={inputBase} placeholder="4" />
+                                </div>
+                            </>
+                        )}
+
+                        {category === 'Train' && (
+                            <div>
+                                <label className={labelBase}>Train Package</label>
+                                <select
+                                    value={vehicleType}
+                                    onChange={e => setVehicleType(e.target.value)}
+                                    className={inputBase}
+                                >
+                                    <option value="">Select Package</option>
+                                    {TRAIN_CLASSES.map(v => (
+                                        <option key={v.value} value={v.value}>{v.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {category === 'Flight' && (
+                            <div>
+                                <label className={labelBase}>Flight Class</label>
+                                <select
+                                    value={vehicleType}
+                                    onChange={e => setVehicleType(e.target.value)}
+                                    className={inputBase}
+                                >
+                                    <option value="">Select Class</option>
+                                    {FLIGHT_CLASSES.map(v => (
+                                        <option key={v.value} value={v.value}>{v.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div>
-                            <label className={labelBase}>Vehicle Type</label>
-                            <select
-                                value={vehicleType}
-                                onChange={e => handleVehicleTypeChange(e.target.value)}
-                                className={inputBase}
-                            >
-                                <option value="">Select Type</option>
-                                {VEHICLE_TYPES.map(v => (
-                                    <option key={v.value} value={v.value}>{v.label}</option>
-                                ))}
-                                <option value="custom">Other / Custom</option>
-                            </select>
-                            {vehicleType === 'custom' && (
-                                <input
-                                    className={`${inputBase} mt-2`}
-                                    placeholder="Enter custom type..."
-                                    onBlur={e => setVehicleType(e.target.value)}
-                                />
-                            )}
-                        </div>
-                        <div>
-                            <label className={labelBase}>Capacity (Pax)</label>
-                            <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} className={inputBase} placeholder="4" />
-                        </div>
-                        <div>
-                            <label className={labelBase}>Price Per Way (KSH) *</label>
+                            <label className={labelBase}>{category === 'Road' ? 'Price Per Way (KSH) *' : 'Price (KSH) *'}</label>
                             <input type="number" value={pricePerWay} onChange={e => setPricePerWay(e.target.value)} className={inputBase} placeholder="0.00" />
                         </div>
                         <div>

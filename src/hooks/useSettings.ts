@@ -13,6 +13,11 @@ export interface AgencySettings {
     default_footer_note: string;
     default_terms: string;
     payment_terms: string;
+    currency_config?: Array<{
+        code: string;
+        name: string;
+        rate: number;
+    }>;
 }
 
 export function useSettings() {

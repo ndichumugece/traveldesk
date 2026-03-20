@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Search, Plus, MapPin } from 'lucide-react';
+import { Building2, Home, Layout, Search, Plus, MapPin } from 'lucide-react';
 import { useProperties, type Property } from '../../hooks/useProperties';
 
 export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (property: Property) => void }) {
@@ -11,7 +11,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Properties</h1>
-                    <p className="text-slate-500 mt-1">Manage your hotels, pricing, and availability.</p>
+                    <p className="text-slate-500 mt-1">Manage your hotels, villas, and apartments.</p>
                 </div>
                 <button
                     onClick={onAdd}
@@ -53,7 +53,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                     <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Property Name</th>
                                     <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Location</th>
                                     <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Base Price</th>
-                                    <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rooms</th>
+                                    <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Capacity</th>
                                     <th className="py-3 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
@@ -67,7 +67,13 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-10 w-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                    <Building2 className="h-5 w-5" />
+                                                    {property.property_type === 'Villa' ? (
+                                                        <Home className="h-5 w-5" />
+                                                    ) : property.property_type === 'Apartment' ? (
+                                                        <Layout className="h-5 w-5" />
+                                                    ) : (
+                                                        <Building2 className="h-5 w-5" />
+                                                    )}
                                                 </div>
                                                 <span className="font-medium text-slate-900 group-hover:text-brand-600 transition-colors">
                                                     {property.name}
@@ -84,7 +90,9 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                             KSH {property.base_price}/night
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-500">
-                                            {property.rooms} rooms
+                                            {property.property_type === 'Hotel' || !property.property_type 
+                                                ? `${property.rooms} rooms` 
+                                                : `${property.bedrooms || 0} bed, ${property.max_guests || 0} guests`}
                                         </td>
                                         <td className="py-4 px-6">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${property.status === 'active'

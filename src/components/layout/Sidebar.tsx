@@ -100,7 +100,7 @@ function SidebarContent({
             {/* Logo / Header */}
             <div className={cn('flex items-center p-4 h-[72px]', isCollapsed ? 'justify-center' : 'px-5 justify-between')}>
                 {!isCollapsed && (
-                    <img src="/traveldesk-logo.png" alt="TravelDesk Logo" className="h-10 w-auto mix-blend-multiply" />
+                    <img src="/traveldesk-logo.png" alt="TourOffice Logo" className="h-10 w-auto mix-blend-multiply" />
                 )}
                 {isMobile ? (
                     <button onClick={onMobileClose}
