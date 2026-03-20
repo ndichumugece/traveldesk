@@ -52,7 +52,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<ProtectedRoute requireAdmin={true}><Dashboard /></ProtectedRoute>} />
+              <Route index element={<Dashboard />} />
               <Route path="properties" element={<Properties />} />
               <Route path="invoice" element={<Documents />} />
               <Route path="confirmation-voucher" element={<Documents />} />
@@ -65,7 +65,7 @@ function App() {
               <Route path="exclusions" element={<Exclusions />} />
               <Route path="meal-plans" element={<MealPlans />} />
               <Route path="users/:id/edit" element={<ProtectedRoute requireAdmin={true}><EditProfile /></ProtectedRoute>} />
-              <Route path="settings" element={<ProtectedRoute requireAdmin={true}><Settings /></ProtectedRoute>} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
         </Suspense>

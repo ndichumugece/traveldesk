@@ -1,6 +1,5 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { TopBar } from './TopBar';
 import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 
@@ -9,12 +8,13 @@ export function DashboardLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
 
+    // Close the mobile drawer automatically on every navigation
     useEffect(() => {
         setMobileOpen(false);
     }, [location.pathname]);
 
     return (
-        <div className="flex h-screen bg-dashboard-gradient overflow-hidden relative selection:bg-brand-100 selection:text-brand-900">
+        <div className="flex h-screen bg-background overflow-hidden relative">
             <Sidebar
                 collapsed={collapsed}
                 onToggle={() => setCollapsed(prev => !prev)}
@@ -23,30 +23,19 @@ export function DashboardLayout() {
             />
 
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-                {/* Mobile top bar */}
-                <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-200 shrink-0 z-20">
+                {/* Mobile top bar — only visible on small screens */}
+                <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-200 shrink-0">
                     <button
                         onClick={() => setMobileOpen(true)}
-                        className="p-2.5 rounded-2xl text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
+                        className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
                         aria-label="Open menu">
                         <Menu className="w-5 h-5" />
                     </button>
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white">
-                            <span className="text-xs font-bold">TD</span>
-                        </div>
-                        <span className="font-bold text-slate-900">TravelDesk</span>
-                    </div>
-                    <div className="w-10" /> {/* Spacer */}
+                    <img src="/traveldesk-logo.png" alt="TravelDesk" className="h-8 w-auto mix-blend-multiply" />
                 </header>
 
-                <TopBar />
-
-                <main className="flex-1 overflow-y-auto w-full transition-all duration-300 custom-scrollbar relative">
-                    {/* Background decoration */}
-                    <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-brand-50/50 to-transparent pointer-events-none" />
-                    
-                    <div className="relative h-full px-6 py-8 lg:px-10 lg:py-10 max-w-[1600px] mx-auto">
+                <main className="flex-1 overflow-y-auto w-full transition-all duration-300 page-transition">
+                    <div className="h-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-8 max-w-7xl mx-auto">
                         <Outlet />
                     </div>
                 </main>
