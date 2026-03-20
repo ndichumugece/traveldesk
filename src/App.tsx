@@ -12,7 +12,8 @@ const Users = lazy(() => import('./pages/Users').then(module => ({ default: modu
 const Settings = lazy(() => import('./pages/Settings').then(module => ({ default: module.Settings })));
 const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
 const Signup = lazy(() => import('./pages/Signup').then(module => ({ default: module.Signup })));
-const Onboarding = lazy(() => import('./pages/Onboarding').then(module => ({ default: module.Onboarding })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => ({ default: module.ResetPassword })));
 const Transport = lazy(() => import('./pages/Transport').then(module => ({ default: module.Transport })));
 const Activities = lazy(() => import('./pages/Activities').then(module => ({ default: module.Activities })));
 const Inclusions = lazy(() => import('./pages/Inclusions').then(module => ({ default: module.Inclusions })));
@@ -37,7 +38,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/register" element={<Signup />} />
-            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected Routes */}
             <Route

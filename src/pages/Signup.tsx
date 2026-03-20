@@ -33,8 +33,7 @@ export function Signup() {
             if (error) throw error;
 
             if (data.user) {
-                const isInvited = searchParams.get('email');
-                navigate(isInvited ? '/' : '/onboarding');
+                navigate('/');
             }
         } catch (err: any) {
             setError(err.message || 'An error occurred during account creation.');
