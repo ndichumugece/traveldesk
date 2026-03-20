@@ -33,7 +33,7 @@ export function Signup() {
             if (error) throw error;
 
             if (data.user) {
-                navigate('/signup-success');
+                navigate('/signup-success', { state: { email } });
             }
         } catch (err: any) {
             setError(err.message || 'An error occurred during account creation.');
