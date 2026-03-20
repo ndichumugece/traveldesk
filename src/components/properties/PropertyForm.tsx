@@ -388,7 +388,7 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                                                                 ))}
                                                             </div>
                                                             <div className="flex">
-                                                                {PRICE_FIELDS.map((pf, idx) => (
+                                                                {PRICE_FIELDS.map((pf) => (
                                                                     <div key={pf.key} className="flex-1 py-2 px-1 border-r border-slate-100 last:border-0">
                                                                         <input type="number" value={spPrices[pf.key] ?? ''}
                                                                             onChange={e => setSpPrices(prev => ({ ...prev, [pf.key]: e.target.value === '' ? null : Number(e.target.value) }))}
