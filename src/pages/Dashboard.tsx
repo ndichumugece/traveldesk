@@ -2,10 +2,13 @@ import { DollarSign, Calendar, TrendingUp, Loader2 } from 'lucide-react';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { RevenueChart } from '../components/dashboard/RevenueChart';
 import { RecentActivity } from '../components/dashboard/RecentActivity';
+import { UserSalesLeaderboard } from '../components/dashboard/UserSalesLeaderboard';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { useAuth } from '../lib/AuthContext';
 
 export function Dashboard() {
     const { stats, revenueData, recentActivity, userName, loading } = useDashboardStats();
+    const { isAdmin } = useAuth();
 
     const firstName = userName?.split(' ')[0] || 'Admin';
 
@@ -53,6 +56,12 @@ export function Dashboard() {
                     <RecentActivity activities={recentActivity} />
                 </div>
             </div>
+
+            {isAdmin && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                    <UserSalesLeaderboard />
+                </div>
+            )}
         </div>
     );
 }

@@ -88,7 +88,7 @@ export function useUsers() {
     const inviteUser = async (email: string, role: string) => {
         const { data: userData } = await supabase.auth.getUser();
 
-        const { data: invitation, error: inviteError } = await supabase
+        const { error: inviteError } = await supabase
             .from('user_invitations')
             .upsert({
                 email,
@@ -96,14 +96,11 @@ export function useUsers() {
                 status: 'pending',
                 invited_by: userData.user?.id,
                 agency_id: agencyId
-            }, { onConflict: 'email' })
-            .select()
-            .single();
+            }, { onConflict: 'email' });
 
         if (inviteError) throw inviteError;
 
         await fetchUsers();
-        return invitation;
     };
 
     const cancelInvite = async (id: string) => {
