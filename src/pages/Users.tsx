@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Plus, Mail, X, Loader2, Pencil, Check, Link } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useUsers } from '../hooks/useUsers';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { containerVariants, listItemVariants, cardVariants, backdropVariants } from '../lib/animations';
+import { useUsers, useInviteUser } from '../hooks/useUsers';
 import type { UserProfile } from '../hooks/useUsers';
 
 export function Users() {
@@ -10,14 +12,18 @@ export function Users() {
     const [inviteRole, setInviteRole] = useState('staff');
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const navigate = useNavigate();
-    const { users, loading, inviteUser } = useUsers();
+    
+    const { data: users = [], isLoading, isFetching } = useUsers();
+    const inviteMutation = useInviteUser();
+    
+    const shouldReduceMotion = useReducedMotion();
 
     const admins = users.filter(u => u.role.toLowerCase() === 'admin');
     const staff = users.filter(u => u.role.toLowerCase() !== 'admin');
 
     const handleInvite = async () => {
         try {
-            await inviteUser(inviteEmail, inviteRole);
+            await inviteMutation.mutateAsync({ email: inviteEmail, role: inviteRole });
             setIsInviting(false);
             setInviteEmail('');
         } catch (error: any) {
@@ -48,10 +54,14 @@ export function Users() {
                         <th className="py-3 px-4 w-20"></th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <motion.tbody 
+                    variants={containerVariants}
+                    className="divide-y divide-slate-100"
+                >
                     {usersList.map((user) => (
-                        <tr
+                        <motion.tr
                             key={user.id}
+                            variants={listItemVariants}
                             onClick={() => navigate(`/users/${user.id}/edit`)}
                             className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                         >
@@ -96,38 +106,54 @@ export function Users() {
                                     <Pencil className="w-4 h-4 text-slate-300" />
                                 </div>
                             </td>
-                        </tr>
+                        </motion.tr>
                     ))}
-                </tbody>
+                </motion.tbody>
             </table>
         </div>
     );
 
     return (
-        <div className="max-w-7xl mx-auto space-y-12 pb-20">
+        <motion.div 
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={shouldReduceMotion ? {} : containerVariants}
+            className="max-w-7xl mx-auto space-y-12 pb-20"
+        >
             {/* ── Page Header ──────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-12">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900">Team members</h1>
                     <p className="text-slate-500 mt-1.5 text-lg">Manage your team members and their account permissions here.</p>
                 </div>
-                <button
+                <motion.button
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setIsInviting(true)}
-                    className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl transition-all border border-slate-200 shadow-sm active:scale-95 font-semibold text-sm"
+                    className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl transition-all border border-slate-200 shadow-sm font-semibold text-sm"
                 >
                     <Plus className="w-4 h-4" />
                     Add team member
-                </button>
+                </motion.button>
+                {isFetching && (
+                    <div className="bg-white/80 backdrop-blur-sm border border-slate-200 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 h-fit">
+                        <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Updating...</span>
+                    </div>
+                )}
             </div>
 
-            {loading ? (
+            {isLoading && !users.length ? (
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-10 h-10 animate-spin text-brand-600" />
                 </div>
             ) : (
                 <div className="space-y-16">
                     {/* Admin Users Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <motion.div 
+                        variants={cardVariants}
+                        className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                    >
                         <div className="lg:col-span-3">
                             <h3 className="text-base font-bold text-slate-900">Admin users</h3>
                             <p className="text-sm text-slate-500 mt-1 leading-relaxed">
@@ -141,12 +167,15 @@ export function Users() {
                                 <div className="py-12 text-center text-slate-400 text-sm italic">No admins found</div>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
 
                     <div className="h-px bg-slate-200" />
 
                     {/* Staff / Account Users Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <motion.div 
+                        variants={cardVariants}
+                        className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                    >
                         <div className="lg:col-span-3">
                             <h3 className="text-base font-bold text-slate-900">Account users</h3>
                             <p className="text-sm text-slate-500 mt-1 leading-relaxed">
@@ -160,86 +189,99 @@ export function Users() {
                                 <div className="py-12 text-center text-slate-400 text-sm italic">No account users found</div>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             )}
 
             {/* Invite Sidebar */}
-            {isInviting && (
-                <div className="fixed inset-0 z-50 flex overflow-hidden">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-slate-900/40 animate-in fade-in duration-300"
-                        onClick={() => setIsInviting(false)}
-                    />
+            <AnimatePresence>
+                {isInviting && (
+                    <div className="fixed inset-0 z-50 flex overflow-hidden">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            variants={backdropVariants}
+                            className="absolute inset-0 bg-slate-900/40"
+                            onClick={() => setIsInviting(false)}
+                        />
 
-                    {/* Sidebar */}
-                    <div className="relative ml-auto w-full max-w-md bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 ease-out border-l border-slate-100 h-full">
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white sticky top-0 z-10">
-                            <div>
-                                <h3 className="text-xl font-bold text-slate-900">Invite Team Member</h3>
-                                <p className="text-slate-500 text-sm mt-1">Send an invitation to join your team.</p>
+                        {/* Sidebar */}
+                        <motion.div 
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={shouldReduceMotion ? { duration: 0.2 } : { type: 'spring', damping: 30, stiffness: 300 }}
+                            className="relative ml-auto w-full max-w-md bg-white shadow-2xl flex flex-col border-l border-slate-100 h-full"
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white sticky top-0 z-10">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900">Invite Team Member</h3>
+                                    <p className="text-slate-500 text-sm mt-1">Send an invitation to join your team.</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsInviting(false)}
+                                    className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setIsInviting(false)}
-                                className="p-2 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
 
-                        {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-                                <div className="relative group">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-brand-500 transition-colors" />
-                                    <input
-                                        type="email"
-                                        value={inviteEmail}
-                                        onChange={e => setInviteEmail(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all font-semibold text-slate-900 placeholder:text-slate-300 shadow-sm"
-                                        placeholder="colleague@agency.com"
-                                    />
+                            {/* Content */}
+                            <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-brand-500 transition-colors" />
+                                        <input
+                                            type="email"
+                                            value={inviteEmail}
+                                            onChange={e => setInviteEmail(e.target.value)}
+                                            className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all font-semibold text-slate-900 placeholder:text-slate-300 shadow-sm"
+                                            placeholder="colleague@agency.com"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Role</label>
+                                    <div className="relative">
+                                        <select
+                                            value={inviteRole}
+                                            onChange={e => setInviteRole(e.target.value)}
+                                            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
+                                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2rem' }}
+                                        >
+                                            <option value="staff">Staff (Account User)</option>
+                                            <option value="admin">Admin (Full Access)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700 ml-1">Role</label>
-                                <div className="relative">
-                                    <select
-                                        value={inviteRole}
-                                        onChange={e => setInviteRole(e.target.value)}
-                                        className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 transition-all text-slate-900 font-semibold shadow-sm appearance-none cursor-pointer"
-                                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.2rem' }}
-                                    >
-                                        <option value="staff">Staff (Account User)</option>
-                                        <option value="admin">Admin (Full Access)</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Footer */}
-                        <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-                            <button
-                                onClick={() => setIsInviting(false)}
-                                className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleInvite}
-                                className="px-8 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-2xl transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 flex items-center gap-2"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Send Invite
-                            </button>
-                        </div>
+                            {/* Footer */}
+                            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                                <button
+                                    onClick={() => setIsInviting(false)}
+                                    className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <motion.button
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={handleInvite}
+                                    className="px-8 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-2xl transition-all shadow-lg hover:shadow-brand-500/25 active:scale-95 flex items-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Send Invite
+                                </motion.button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }
 

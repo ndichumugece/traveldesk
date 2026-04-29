@@ -1,4 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface ChartData {
     name: string;
@@ -7,49 +9,65 @@ interface ChartData {
 
 interface RevenueChartProps {
     data: ChartData[];
+    range?: 'week' | 'month' | 'year';
+    href?: string;
 }
 
-export function RevenueChart({ data }: RevenueChartProps) {
+export function RevenueChart({ data, range = 'year', href }: RevenueChartProps) {
+    const rangeLabel = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Current year';
+    
     return (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm h-[400px]">
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">Revenue Overview</h3>
-                <p className="text-sm text-slate-500">Monthly revenue for the current year</p>
+        <div className="bg-[#1AA385] rounded-[3rem] p-12 shadow-2xl min-h-[480px] relative overflow-hidden group">
+            {/* Soft Glow Background */}
+            <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full -mr-32 -mt-32 blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/5 rounded-full -ml-20 -mb-20 blur-[80px] pointer-events-none" />
+            
+            <div className="relative z-10 mb-10 flex items-start justify-between">
+                <div>
+                    <h3 className="text-lg font-bold text-white tracking-tight">Revenue Overview</h3>
+                    <p className="text-white/70 text-sm font-medium mt-1">{range === 'year' ? 'Monthly' : 'Daily'} revenue for {rangeLabel}</p>
+                </div>
             </div>
 
-            <div className="h-[300px] w-full">
+            <div className="h-[280px] w-full relative z-10 mt-auto">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                <stop offset="5%" stopColor="#fff" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="#fff" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                         <XAxis
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 12 }}
+                            tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600 }}
                             dy={10}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 12 }}
-                            tickFormatter={(value) => `KSH ${value}`}
+                            tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600 }}
+                            tickFormatter={(value) => `KSH ${(value / 1000).toFixed(0)}k`}
                         />
                         <Tooltip
-                            contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#0f172a', fontWeight: 600 }}
+                            contentStyle={{ 
+                                backgroundColor: '#147a66', 
+                                border: 'none', 
+                                borderRadius: '16px', 
+                                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                                color: '#fff'
+                            }}
+                            itemStyle={{ color: '#fff', fontWeight: 700 }}
                             formatter={(value: any) => [`KSH ${value}`, 'Revenue']}
                         />
                         <Area
                             type="monotone"
                             dataKey="revenue"
-                            stroke="#6366f1"
-                            strokeWidth={3}
+                            stroke="#fff"
+                            strokeWidth={4}
                             fillOpacity={1}
                             fill="url(#colorRevenue)"
                         />

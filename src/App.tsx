@@ -1,8 +1,16 @@
-import { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { AuthProvider } from './lib/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 // Lazy loaded pages
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -20,7 +28,21 @@ const Activities = lazy(() => import('./pages/Activities').then(module => ({ def
 const Inclusions = lazy(() => import('./pages/Inclusions').then(module => ({ default: module.Inclusions })));
 const Exclusions = lazy(() => import('./pages/Exclusions').then(module => ({ default: module.Exclusions })));
 const MealPlans = lazy(() => import('./pages/MealPlans').then(module => ({ default: module.MealPlans })));
+const Calendar = lazy(() => import('./pages/Calendar').then(module => ({ default: module.Calendar })));
 const EditProfile = lazy(() => import('./pages/admin/EditProfile').then(module => ({ default: module.EditProfile })));
+const Clients = lazy(() => import('./pages/Clients').then(module => ({ default: module.Clients })));
+const TopProperties = lazy(() => import('./pages/TopProperties').then(module => ({ default: module.TopProperties })));
+
+// Finance Routes
+const FinanceOverview = lazy(() => import('./pages/finance/Overview').then(module => ({ default: module.Overview })));
+const FinanceInvoices = lazy(() => import('./pages/finance/Invoices').then(module => ({ default: module.Invoices })));
+const FinancePayments = lazy(() => import('./pages/finance/Payments').then(module => ({ default: module.Payments })));
+const FinanceExpenses = lazy(() => import('./pages/finance/Expenses').then(module => ({ default: module.Expenses })));
+const FinanceAccounts = lazy(() => import('./pages/finance/Accounts').then(module => ({ default: module.Accounts })));
+const FinanceReports = lazy(() => import('./pages/finance/Reports').then(module => ({ default: module.Reports })));
+const SalesPerformance = lazy(() => import('./pages/SalesPerformance').then(module => ({ default: module.SalesPerformance })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then(module => ({ default: module.UserProfile })));
+const LeadSourcePerformance = lazy(() => import('./pages/LeadSourcePerformance').then(module => ({ default: module.LeadSourcePerformance })));
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -33,6 +55,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Routes */}
@@ -52,7 +75,8 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Dashboard />} />
+              <Route index element={<ProtectedRoute requireAdmin={true}><Dashboard /></ProtectedRoute>} />
+              <Route path="calendar" element={<Calendar />} />
               <Route path="properties" element={<Properties />} />
               <Route path="invoice" element={<Documents />} />
               <Route path="confirmation-voucher" element={<Documents />} />
@@ -66,6 +90,19 @@ function App() {
               <Route path="meal-plans" element={<MealPlans />} />
               <Route path="users/:id/edit" element={<ProtectedRoute requireAdmin={true}><EditProfile /></ProtectedRoute>} />
               <Route path="settings" element={<Settings />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="top-properties" element={<TopProperties />} />
+              
+              {/* Finance Routes */}
+              <Route path="finance" element={<FinanceOverview />} />
+              <Route path="finance/invoices" element={<FinanceInvoices />} />
+              <Route path="finance/payments" element={<FinancePayments />} />
+              <Route path="finance/expenses" element={<FinanceExpenses />} />
+              <Route path="finance/accounts" element={<FinanceAccounts />} />
+              <Route path="finance/reports" element={<FinanceReports />} />
+              <Route path="sales-performance" element={<ProtectedRoute requireAdmin={true}><SalesPerformance /></ProtectedRoute>} />
+              <Route path="lead-sources" element={<ProtectedRoute requireAdmin={true}><LeadSourcePerformance /></ProtectedRoute>} />
+              <Route path="profile" element={<UserProfile />} />
             </Route>
           </Routes>
         </Suspense>

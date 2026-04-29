@@ -9,6 +9,7 @@ export interface Transport {
     price_per_way: number;
     capacity: number;
     status: 'active' | 'inactive';
+    supplier_id?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -27,8 +28,8 @@ export const useTransports = () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('transports')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .select('*, supplier_id')
+                .order('name', { ascending: true });
 
             if (error) throw error;
             setTransports(data || []);

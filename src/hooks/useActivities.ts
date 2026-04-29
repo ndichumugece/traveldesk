@@ -8,6 +8,7 @@ export interface Activity {
     location: string;
     price: number;
     status: 'active' | 'inactive';
+    supplier_id?: string;
     created_at?: string;
     updated_at?: string;
 }
@@ -26,8 +27,8 @@ export const useActivities = () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('activities')
-                .select('*')
-                .order('created_at', { ascending: false })
+                .select('*, supplier_id')
+                .order('name', { ascending: true })
                 .limit(100);
 
             if (error) throw error;

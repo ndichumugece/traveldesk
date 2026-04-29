@@ -1,13 +1,21 @@
-import { TrendingUp, Users, Loader2 } from 'lucide-react';
+import { Users, Loader2, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useUserSales } from '../../hooks/useUserSales';
+import { useAuth } from '../../lib/AuthContext';
+import { cn } from '../../lib/utils';
+import { motion, useReducedMotion } from 'framer-motion';
+import { cardVariants, containerVariants, listItemVariants } from '../../lib/animations';
 
 export function UserSalesLeaderboard() {
     const { salesData, loading, error } = useUserSales();
+    const { user: currentUser } = useAuth();
+
+    const shouldReduceMotion = useReducedMotion();
 
     if (loading) {
         return (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 flex items-center justify-center min-h-[300px]">
-                <Loader2 className="h-8 w-8 animate-spin text-[#5438FF]" />
+                <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
             </div>
         );
     }
@@ -21,73 +29,114 @@ export function UserSalesLeaderboard() {
     }
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full">
+        <motion.div 
+            initial={shouldReduceMotion ? { opacity: 0 } : "initial"}
+            whileInView="animate"
+            viewport={{ once: true }}
+            variants={cardVariants}
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full"
+        >
+            {/* Header */}
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
-                    </div>
                     <div>
                         <h3 className="font-bold text-slate-900">User Sales Performance</h3>
                         <p className="text-xs text-slate-500">Sales volume by agent</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-sm">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-xs font-bold text-slate-700">{salesData.length} Agents</span>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-200 rounded-lg shadow-sm">
+                        <Users className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs font-bold text-slate-700">{salesData.length} Agents</span>
+                    </div>
+                    <Link 
+                        to="/sales-performance"
+                        className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:shadow-md transition-all active:scale-95 group/arrow"
+                    >
+                        <ArrowUpRight className="w-5 h-5 group-hover/arrow:rotate-45 transition-transform" />
+                    </Link>
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50/50 px-6">
-                            <th className="py-3 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">Agent</th>
-                            <th className="py-3 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Sales Count</th>
-                            <th className="py-3 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Total Revenue</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {salesData.length > 0 ? (
-                            salesData.map((user) => (
-                                <tr key={user.userId} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="py-4 px-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs ring-2 ring-white group-hover:ring-brand-50 transition-all">
-                                                {user.userName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-900 leading-none">{user.userName}</p>
-                                                <p className="text-[11px] text-slate-500 mt-1">{user.userEmail}</p>
-                                            </div>
+            {/* List Content */}
+            <motion.div 
+                variants={containerVariants}
+                className="flex-1 p-6 space-y-8 overflow-y-auto"
+            >
+                {salesData.length > 0 ? (
+                    salesData.map((user, index) => {
+                        const maxSales = salesData[0]?.totalSales || 1;
+                        const progressWidth = (user.totalSales / maxSales) * 100;
+                        
+                        return (
+                            <motion.div 
+                                key={user.userId} 
+                                variants={listItemVariants}
+                                className="group relative"
+                            >
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-4">
+                                        {/* Rank Badge */}
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                                            index === 0 ? "bg-[#FFF9E5] text-[#D87D31]" : 
+                                            index === 1 ? "bg-[#F0F9FF] text-[#0284C7]" : 
+                                            index === 2 ? "bg-[#FDF2F2] text-[#DC2626]" : 
+                                            "bg-slate-50 text-slate-500"
+                                        )}>
+                                            #{index + 1}
                                         </div>
-                                    </td>
-                                    <td className="py-4 px-6 text-right">
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
-                                            {user.documentCount} docs
-                                        </span>
-                                    </td>
-                                    <td className="py-4 px-6 text-right">
-                                        <p className="text-sm font-bold text-slate-900">KSH {user.totalSales.toLocaleString()}</p>
-                                        <div className="w-24 h-1.5 bg-slate-100 rounded-full mt-2 ml-auto overflow-hidden">
-                                            <div 
-                                                className="h-full bg-brand-500 rounded-full" 
-                                                style={{ width: `${Math.min(100, (user.totalSales / (salesData[0]?.totalSales || 1)) * 100)}%` }}
-                                            />
+                                        
+                                        <div>
+                                            <p className="text-base font-bold text-[#333333] leading-none mb-1">
+                                                {user.userName}
+                                                {user.userId === currentUser?.id && (
+                                                    <span className="ml-2 text-[10px] font-bold text-brand-500 uppercase tracking-wider">
+                                                        (You)
+                                                    </span>
+                                                )}
+                                            </p>
+                                            <p className="text-xs font-medium text-slate-400">
+                                                {user.documentCount} total bookings
+                                            </p>
                                         </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={3} className="py-12 px-6 text-center">
-                                    <p className="text-sm text-slate-400 italic">No sales data available yet.</p>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-lg font-black text-[#333333] leading-tight">
+                                            KES {user.totalSales.toLocaleString()}
+                                        </p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                            Total Sales
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Thick Progress Bar */}
+                                <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        whileInView={{ width: `${progressWidth}%` }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            index === 0 ? "bg-[#FFC107]" : 
+                                            index === 1 ? "bg-[#FFC107]/60" : 
+                                            index === 2 ? "bg-[#FFC107]/40" : 
+                                            "bg-[#FFC107]/20"
+                                        )}
+                                    />
+                                </div>
+                            </motion.div>
+                        );
+                    })
+                ) : (
+                    <div className="py-12 text-center">
+                        <p className="text-sm text-slate-400 italic">No sales data available yet.</p>
+                    </div>
+                )}
+            </motion.div>
+        </motion.div>
     );
 }

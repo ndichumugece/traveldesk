@@ -26,8 +26,8 @@ export const ProtectedRoute = ({
     }
 
     if (requireAdmin && !isAdmin) {
-        // Redirect non-admins to a safe page (Properties)
-        return <Navigate to="/properties" replace />;
+        // Redirect non-admins to a safe page (Calendar)
+        return <Navigate to="/calendar" replace />;
     }
 
     return <>{children}</>;

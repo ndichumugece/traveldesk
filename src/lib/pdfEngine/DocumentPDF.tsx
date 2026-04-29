@@ -15,8 +15,8 @@ const styles = StyleSheet.create({
     page: {
         paddingTop: 40,
         paddingBottom: 40,
-        paddingLeft: 50,
-        paddingRight: 50,
+        paddingLeft: 15,
+        paddingRight: 20,
         fontFamily: 'Helvetica',
         backgroundColor: '#ffffff',
         fontSize: 10,
@@ -29,12 +29,14 @@ const styles = StyleSheet.create({
     },
     logoArea: {
         width: '50%',
+        alignItems: 'flex-start',
         justifyContent: 'flex-start',
     },
     logoImage: {
         maxWidth: 250,
         maxHeight: 100,
         objectFit: 'contain',
+        marginLeft: -10,
     },
     logoTextPrimary: {
         fontSize: 22,
@@ -754,14 +756,21 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                                         </View>
                                     </View>
                                 )}
-                                {settings.default_terms && (
+                                {metadata?.termsAndConditions ? (
+                                    <View style={{ marginBottom: 15 }}>
+                                        <Text style={styles.notesTitle}>Terms & Conditions</Text>
+                                        <View style={{ marginTop: 5 }}>
+                                            {parseHtmlToPdf(metadata.termsAndConditions)}
+                                        </View>
+                                    </View>
+                                ) : settings?.default_terms ? (
                                     <View style={{ marginBottom: 15 }}>
                                         <Text style={styles.notesTitle}>Terms & Conditions</Text>
                                         <View style={{ marginTop: 5 }}>
                                             {parseHtmlToPdf(settings.default_terms)}
                                         </View>
                                     </View>
-                                )}
+                                ) : null}
                                 {settings.default_footer_note && (
                                     <Text style={[styles.footerNote, { borderTopWidth: 0, marginTop: 5 }]}>
                                         {settings.default_footer_note}
@@ -896,9 +905,9 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                 </View>
 
                 {/* Notes & Payment Details */}
-                {(settings?.payment_terms || settings?.default_terms) && (
+                {(settings?.payment_terms || settings?.default_terms || metadata?.termsAndConditions) && (
                     <View style={styles.notesSection}>
-                        {settings.payment_terms && (
+                        {settings?.payment_terms && (
                             <View style={{ marginBottom: 15 }}>
                                 <Text style={styles.notesTitle}>Payment Terms</Text>
                                 <View style={{ marginTop: 5 }}>
@@ -906,14 +915,21 @@ export const DocumentPDF = ({ documentType, reference, clientName, clientEmail, 
                                 </View>
                             </View>
                         )}
-                        {settings.default_terms && (
+                        {metadata?.termsAndConditions ? (
+                            <View>
+                                <Text style={styles.notesTitle}>Terms & Conditions</Text>
+                                <View style={{ marginTop: 5 }}>
+                                    {parseHtmlToPdf(metadata.termsAndConditions)}
+                                </View>
+                            </View>
+                        ) : settings?.default_terms ? (
                             <View>
                                 <Text style={styles.notesTitle}>Terms & Conditions</Text>
                                 <View style={{ marginTop: 5 }}>
                                     {parseHtmlToPdf(settings.default_terms)}
                                 </View>
                             </View>
-                        )}
+                        ) : null}
                     </View>
                 )}
 

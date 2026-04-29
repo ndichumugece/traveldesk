@@ -2,6 +2,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PageTransition } from '../ui/PageTransition';
 
 export function DashboardLayout() {
     const [collapsed, setCollapsed] = useState(false);
@@ -34,9 +36,13 @@ export function DashboardLayout() {
                     <img src="/traveldesk-logo.png" alt="TourOffice" className="h-8 w-auto mix-blend-multiply" />
                 </header>
 
-                <main className="flex-1 overflow-y-auto w-full transition-all duration-300 page-transition">
-                    <div className="h-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-8 max-w-7xl mx-auto">
-                        <Outlet />
+                <main className="flex-1 overflow-y-auto w-full relative">
+                    <div className="min-h-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+                        <AnimatePresence mode="wait">
+                            <PageTransition key={location.pathname}>
+                                <Outlet />
+                            </PageTransition>
+                        </AnimatePresence>
                     </div>
                 </main>
             </div>

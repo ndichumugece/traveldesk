@@ -8,8 +8,10 @@ interface AuthContextType {
     role: string | null;
     isAdmin: boolean;
     agencyId: string | null;
+    profile: { full_name: string | null; avatar_url: string | null } | null;
     signOut: () => Promise<void>;
     loading: boolean;
+    refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,8 +20,10 @@ const AuthContext = createContext<AuthContextType>({
     role: null,
     isAdmin: false,
     agencyId: null,
+    profile: null,
     signOut: async () => { },
     loading: true,
+    refreshProfile: async () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -27,6 +31,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [agencyId, setAgencyId] = useState<string | null>(null);
+    const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
     const [loading, setLoading] = useState(true);
 
     const lastUserId = useRef<string | null>(null);
@@ -35,7 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const rolePromise = supabase
                 .from('profiles')
-                .select('role, agency_id')
+                .select('role, agency_id, full_name, avatar_url')
                 .eq('id', userId)
                 .single();
 
@@ -49,12 +54,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             clearTimeout(timeoutId!);
 
             if (error) throw error;
-            if (data?.role) {
+            if (data) {
                 setRole(data.role);
                 setAgencyId(data.agency_id);
+                setProfile({
+                    full_name: data.full_name,
+                    avatar_url: data.avatar_url
+                });
             } else {
                 setRole(prev => prev || 'staff');
                 setAgencyId(null);
+                setProfile(null);
             }
         } catch (error: any) {
             if (error?.message === 'fetchRole timeout') {
@@ -66,6 +76,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setAgencyId(null);
         }
     };
+
+    const refreshProfile = useCallback(async () => {
+        if (user) {
+            await fetchRole(user.id);
+        }
+    }, [user]);
 
     useEffect(() => {
         // Check active sessions and sets the user
@@ -128,9 +144,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         role,
         isAdmin: role === 'admin',
         agencyId,
+        profile,
         signOut,
         loading,
-    }), [session, user, role, agencyId, loading, signOut]);
+        refreshProfile,
+    }), [session, user, role, agencyId, profile, loading, signOut, refreshProfile]);
 
     return (
         <AuthContext.Provider value={value}>

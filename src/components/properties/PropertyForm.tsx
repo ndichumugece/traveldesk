@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, X, Loader2, Pencil, Users, DollarSign, BedDouble, Baby, UserPlus, TrendingUp } from 'lucide-react';
-import { useProperties, type RoomType, type OccupancyType, type RateType, type SeasonalPricing, type Property } from '../../hooks/useProperties';
+import { 
+    usePropertyDetails, 
+    useAddProperty, 
+    useUpdatePropertyFull, 
+    type RoomType, 
+    type OccupancyType, 
+    type SeasonalPricing, 
+    type Property 
+} from '../../hooks/useProperties';
+import { SupplierSelector } from '../ui/SupplierSelector';
 
 interface PropertyFormProps {
     onDiscard: () => void;
@@ -53,9 +62,12 @@ const labelBase = 'block text-xs font-semibold text-slate-500 uppercase tracking
 
 export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps) {
     const [activeTab, setActiveTab] = useState('general');
-    const { addProperty, updatePropertyFull, fetchPropertyDetails } = useProperties();
+    
+    const { data: fullProperty, isLoading: fullPropLoading } = usePropertyDetails(existingProperty?.id || null);
+    const addPropertyMutation = useAddProperty();
+    const updatePropertyMutation = useUpdatePropertyFull();
+
     const [isSaving, setIsSaving] = useState(false);
-    const [fullPropLoading, setFullPropLoading] = useState(false);
 
     const [name, setName] = useState(existingProperty?.name || '');
     const [location, setLocation] = useState(existingProperty?.location || '');
@@ -65,23 +77,18 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
     const [bedrooms, setBedrooms] = useState(existingProperty?.bedrooms?.toString() || '0');
     const [bathrooms, setBathrooms] = useState(existingProperty?.bathrooms?.toString() || '0');
     const [maxGuests, setMaxGuests] = useState(existingProperty?.max_guests?.toString() || '0');
+    const [supplierId, setSupplierId] = useState(existingProperty?.supplier_id || '');
 
-    const [roomTypes, setRoomTypes] = useState<RoomType[]>(existingProperty?.room_types || []);
-    const [propSeasons, setPropSeasons] = useState<SeasonalPricing[]>(existingProperty?.seasonal_pricing || []);
+    const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+    const [propSeasons, setPropSeasons] = useState<SeasonalPricing[]>([]);
 
-    // Fetch full details if only slice was provided from list
-    useState(() => {
-        if (existingProperty?.id) {
-            setFullPropLoading(true);
-            fetchPropertyDetails(existingProperty.id).then(fullProp => {
-                if (fullProp) {
-                    setRoomTypes(fullProp.room_types || []);
-                    setPropSeasons(fullProp.seasonal_pricing || []);
-                }
-                setFullPropLoading(false);
-            });
+    // Sync state when full data arrives
+    useEffect(() => {
+        if (fullProperty) {
+            setRoomTypes(fullProperty.room_types || []);
+            setPropSeasons(fullProperty.seasonal_pricing || []);
         }
-    });
+    }, [fullProperty]);
 
     const [showRoomForm, setShowRoomForm] = useState(false);
     const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
@@ -115,20 +122,37 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
             return;
         }
         setIsSaving(true);
-        const pd = {
-            name, location, base_price: Number(basePrice), rooms: roomTypes.length,
-            property_type: propertyType,
-            bedrooms: Number(bedrooms),
-            bathrooms: Number(bathrooms),
-            max_guests: Number(maxGuests),
-            status: 'active' as const, amenities: amenities.split(',').map(a => a.trim()).filter(Boolean)
-        };
-        const res = existingProperty
-            ? await updatePropertyFull(existingProperty.id, pd, roomTypes, propSeasons)
-            : await addProperty(pd, roomTypes, propSeasons);
-        setIsSaving(false);
-        if (res.error) alert('Error: ' + res.error);
-        else onDiscard();
+        try {
+            const pd = {
+                name, location, base_price: Number(basePrice), rooms: roomTypes.length,
+                property_type: propertyType,
+                bedrooms: Number(bedrooms),
+                bathrooms: Number(bathrooms),
+                max_guests: Number(maxGuests),
+                supplier_id: supplierId || null,
+                status: 'active' as const, amenities: amenities.split(',').map(a => a.trim()).filter(Boolean)
+            };
+
+            if (existingProperty) {
+                await updatePropertyMutation.mutateAsync({
+                    id: existingProperty.id,
+                    updates: pd,
+                    roomTypes,
+                    seasonalPricing: propSeasons
+                });
+            } else {
+                await addPropertyMutation.mutateAsync({
+                    property: pd,
+                    roomTypes,
+                    seasonalPricing: propSeasons
+                });
+            }
+            onDiscard();
+        } catch (err: any) {
+            alert('Error saving property: ' + (err.message || 'Unknown error'));
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const confirmPropSeason = () => {
@@ -270,6 +294,12 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                     {/* ── GENERAL TAB ────────────────────────────────── */}
                     {activeTab === 'general' && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="sm:col-span-2 bg-slate-50/50 p-4 rounded-2xl border border-slate-200 mb-2">
+                                <SupplierSelector 
+                                    selectedId={supplierId} 
+                                    onSelect={setSupplierId} 
+                                />
+                            </div>
                             <div>
                                 <label className={labelBase}>Property Name *</label>
                                 <input value={name} onChange={e => setName(e.target.value)} className={inputBase} placeholder="e.g. The Grand Resort" />

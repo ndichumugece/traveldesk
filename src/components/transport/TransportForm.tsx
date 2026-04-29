@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Loader2, Car, Train, Plane } from 'lucide-react';
 import { useTransports, type Transport } from '../../hooks/useTransports';
+import { SupplierSelector } from '../ui/SupplierSelector';
 
 interface TransportFormProps {
     onDiscard: () => void;
@@ -46,6 +47,7 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
     const [pricePerWay, setPricePerWay] = useState(existingTransport?.price_per_way?.toString() || '');
     const [capacity, setCapacity] = useState(existingTransport?.capacity?.toString() || '4');
     const [status, setStatus] = useState<'active' | 'inactive'>(existingTransport?.status || 'active');
+    const [supplierId, setSupplierId] = useState(existingTransport?.supplier_id || '');
 
     const handleVehicleTypeChange = (typeValue: string) => {
         setVehicleType(typeValue);
@@ -78,7 +80,8 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
             vehicle_type: displayType,
             price_per_way: Number(pricePerWay),
             capacity: Number(capacity),
-            status
+            status,
+            supplier_id: category === 'Road' ? (supplierId || null) : null
         };
 
         const res = existingTransport
@@ -136,7 +139,15 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
                     ))}
                 </div>
 
-                <div className="p-8">
+                <div className="p-8 space-y-8">
+                    {category === 'Road' && (
+                        <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-200">
+                            <SupplierSelector 
+                                selectedId={supplierId} 
+                                onSelect={setSupplierId} 
+                            />
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="sm:col-span-2">
                             <label className={labelBase}>Service Name *</label>

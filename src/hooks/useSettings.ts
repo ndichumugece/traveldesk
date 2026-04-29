@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { dataCache } from '../lib/cache';
 
 export interface AgencySettings {
     id: string;
@@ -21,8 +22,11 @@ export interface AgencySettings {
 }
 
 export function useSettings() {
-    const [settings, setSettings] = useState<AgencySettings | null>(null);
-    const [loading, setLoading] = useState(true);
+    const cacheKey = 'agency-settings';
+    const cachedSettings = dataCache.get<AgencySettings>(cacheKey);
+
+    const [settings, setSettings] = useState<AgencySettings | null>(cachedSettings || null);
+    const [loading, setLoading] = useState(!cachedSettings);
     const [error, setError] = useState<string | null>(null);
 
     const fetchSettings = async () => {
@@ -44,6 +48,7 @@ export function useSettings() {
                 }
             } else {
                 setSettings(data);
+                dataCache.set(cacheKey, data);
             }
         } catch (err: any) {
             console.error('Error fetching settings:', err);
@@ -68,6 +73,7 @@ export function useSettings() {
                     .single();
                 if (error) throw error;
                 setSettings(data);
+                dataCache.set(cacheKey, data);
                 return { data, error: null };
             } else {
                 // Update existing
@@ -79,6 +85,7 @@ export function useSettings() {
                     .single();
                 if (error) throw error;
                 setSettings(data);
+                dataCache.set(cacheKey, data);
                 return { data, error: null };
             }
         } catch (err: any) {

@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { Building2, Home, Layout, Search, Plus, MapPin } from 'lucide-react';
+import { useQueryState } from '../../hooks/useQueryState';
+import { Building2, Home, Layout, Search, Plus, MapPin, Loader2 } from 'lucide-react';
 import { useProperties, type Property } from '../../hooks/useProperties';
 
 export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (property: Property) => void }) {
-    const { properties, loading, error } = useProperties();
-    const [searchTerm, setSearchTerm] = useState('');
+    const { data: properties = [], isLoading, isFetching, error } = useProperties();
+    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+
+    const filteredProperties = properties.filter(prop => 
+        prop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        prop.location.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div className="space-y-6">
@@ -13,13 +18,21 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Properties</h1>
                     <p className="text-slate-500 mt-1">Manage your hotels, villas, and apartments.</p>
                 </div>
-                <button
-                    onClick={onAdd}
-                    className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl transition-all duration-150 shadow-sm hover:shadow active:scale-95 font-medium"
-                >
-                    <Plus className="w-5 h-5" />
-                    Add Property
-                </button>
+                <div className="flex items-center gap-3">
+                    {isFetching && (
+                        <div className="bg-white/80 backdrop-blur-sm border border-slate-200 px-3 py-1 rounded-full shadow-sm flex items-center gap-2 h-fit">
+                            <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Updating...</span>
+                        </div>
+                    )}
+                    <button
+                        onClick={onAdd}
+                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl transition-all duration-150 shadow-sm hover:shadow active:scale-95 font-medium"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Add Property
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -37,14 +50,14 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                 </div>
 
                 <div className="overflow-x-auto">
-                    {loading ? (
+                    {isLoading && !properties.length ? (
                         <div className="p-12 text-center text-slate-500">
-                            <div className="animate-spin w-8 h-8 border-4 border-slate-200 border-t-brand-600 rounded-full mx-auto mb-4"></div>
-                            <p>Loading properties...</p>
+                            <Loader2 className="w-8 h-8 animate-spin text-brand-600 mx-auto mb-4" />
+                            <p className="font-medium">Loading properties...</p>
                         </div>
                     ) : error ? (
-                        <div className="p-12 text-center text-red-500">
-                            <p>Error loading properties: {error}</p>
+                        <div className="p-12 text-center text-rose-500">
+                            <p className="font-medium text-rose-600">Error loading properties: {error instanceof Error ? error.message : 'Unknown error'}</p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
@@ -58,7 +71,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {properties.map((property) => (
+                                {filteredProperties.map((property) => (
                                     <tr
                                         key={property.id}
                                         onClick={() => onEdit(property)}
@@ -87,7 +100,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm font-semibold text-slate-900">
-                                            KSH {property.base_price}/night
+                                            KSH {property.base_price.toLocaleString()}/night
                                         </td>
                                         <td className="py-4 px-6 text-sm text-slate-500">
                                             {property.property_type === 'Hotel' || !property.property_type 
@@ -108,7 +121,7 @@ export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (pr
                         </table>
                     )}
                 </div>
-                {!loading && properties.length === 0 && (
+                {!isLoading && filteredProperties.length === 0 && (
                     <div className="p-12 text-center text-slate-500">
                         <Building2 className="mx-auto h-12 w-12 text-slate-300 mb-4" />
                         <p className="text-lg font-medium text-slate-900">No properties found</p>

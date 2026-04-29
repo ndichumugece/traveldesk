@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useActivities, type Activity } from '../../hooks/useActivities';
+import { SupplierSelector } from '../ui/SupplierSelector';
 
 interface ActivityFormProps {
     onDiscard: () => void;
@@ -19,6 +20,7 @@ export function ActivityForm({ onDiscard, existingActivity }: ActivityFormProps)
     const [location, setLocation] = useState(existingActivity?.location || '');
     const [price, setPrice] = useState(existingActivity?.price?.toString() || '');
     const [status, setStatus] = useState<'active' | 'inactive'>(existingActivity?.status || 'active');
+    const [supplierId, setSupplierId] = useState(existingActivity?.supplier_id || '');
 
     const handleSave = async () => {
         if (!name || !price) {
@@ -32,7 +34,8 @@ export function ActivityForm({ onDiscard, existingActivity }: ActivityFormProps)
             description,
             location,
             price: Number(price),
-            status
+            status,
+            supplier_id: supplierId || null
         };
 
         const res = existingActivity
@@ -72,7 +75,13 @@ export function ActivityForm({ onDiscard, existingActivity }: ActivityFormProps)
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-8">
+                <div className="p-8 space-y-8">
+                    <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-200">
+                        <SupplierSelector 
+                            selectedId={supplierId} 
+                            onSelect={setSupplierId} 
+                        />
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="sm:col-span-2">
                             <label className={labelBase}>Activity Name *</label>

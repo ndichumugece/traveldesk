@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
 export type OccupancyType = 'SGL' | 'DBL' | 'TWN' | 'TPL' | 'Quad' | 'Per Room' | 'Per Person';
@@ -9,8 +9,7 @@ export interface RoomType {
     property_id?: string;
     name: string;
     capacity: number;
-    price_modifier: number;   // kept for backward-compat; prefer explicit prices below
-    // New pricing fields
+    price_modifier: number;   
     occupancy_type: OccupancyType;
     rate_type: RateType;
     price_sgl?: number | null;
@@ -50,42 +49,39 @@ export interface Property {
     bedrooms?: number;
     bathrooms?: number;
     max_guests?: number;
+    supplier_id?: string;
     status: 'active' | 'inactive';
     amenities: string[];
     room_types?: RoomType[];
     seasonal_pricing?: SeasonalPricing[];
 }
 
+const fetchProperties = async () => {
+    const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities, supplier_id, room_types(id, name, capacity, price_modifier, occupancy_type, rate_type, price_sgl, price_dbl, price_twn, price_tpl, price_quad, extra_adult_rate, child_rate, infants_free, property_id)')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+};
+
 export const useProperties = () => {
-    const [properties, setProperties] = useState<Property[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    return useQuery({
+        queryKey: ['properties'],
+        queryFn: fetchProperties,
+    });
+};
 
-    const fetchProperties = async () => {
-        try {
-            setLoading(true);
-            // Only fetch baseline property data for list view
-            const { data, error } = await supabase
-                .from('properties')
-                .select('id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities, room_types(id, name, capacity, price_modifier, occupancy_type, rate_type, price_sgl, price_dbl, price_twn, price_tpl, price_quad, extra_adult_rate, child_rate, infants_free, property_id)')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setProperties(data || []);
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchPropertyDetails = async (id: string): Promise<Property | null> => {
-        try {
-            // 1. Fetch Property + Room Types
+export function usePropertyDetails(id: string | null) {
+    return useQuery({
+        queryKey: ['property', id],
+        queryFn: async () => {
+            if (!id) return null;
             const { data: prop, error: propError } = await supabase
                 .from('properties')
                 .select(`
-                    id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities,
+                    id, name, location, base_price, rooms, property_type, bedrooms, bathrooms, max_guests, status, amenities, supplier_id,
                     room_types (
                         id, name, capacity, price_modifier, occupancy_type, rate_type, 
                         price_sgl, price_dbl, price_twn, price_tpl, price_quad, 
@@ -98,7 +94,6 @@ export const useProperties = () => {
             if (propError) throw propError;
             if (!prop) return null;
 
-            // 2. Fetch ALL Seasonal Pricing for this property
             const { data: seasons, error: seasonsError } = await supabase
                 .from('seasonal_pricing')
                 .select(`
@@ -109,7 +104,6 @@ export const useProperties = () => {
 
             if (seasonsError) throw seasonsError;
 
-            // 3. Merge them
             const property: Property = {
                 ...prop,
                 seasonal_pricing: seasons?.filter(s => !s.room_type_id) || [],
@@ -120,24 +114,19 @@ export const useProperties = () => {
             };
 
             return property;
-        } catch (err) {
-            console.error('Error fetching property details:', err);
-            // If the error is specific to seasonal_pricing column, the user will see it here
-            // but let's re-throw so any higher-level handler (like an alert) catches it
-            throw err; 
-        }
-    };
+        },
+        enabled: !!id,
+    });
+}
 
-    useEffect(() => {
-        fetchProperties();
-    }, []);
-
-    const addProperty = async (
-        property: Omit<Property, 'id' | 'room_types' | 'seasonal_pricing'>,
-        roomTypes: RoomType[],
-        seasonalPricing: SeasonalPricing[]
-    ) => {
-        try {
+export function useAddProperty() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ property, roomTypes, seasonalPricing }: {
+            property: Omit<Property, 'id' | 'room_types' | 'seasonal_pricing'>,
+            roomTypes: RoomType[],
+            seasonalPricing: SeasonalPricing[]
+        }) => {
             const { data: propData, error: propError } = await supabase
                 .from('properties')
                 .insert([property])
@@ -149,7 +138,6 @@ export const useProperties = () => {
 
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
-                    // Strictly exclude seasonal_pricing from the room_types table insert
                     const { seasonal_pricing: rtSeasons, ...rtData } = rt;
                     const { data: rtRecord, error: rtError } = await supabase
                         .from('room_types')
@@ -177,20 +165,23 @@ export const useProperties = () => {
                 if (spError) throw spError;
             }
 
-            fetchProperties();
-            return { data: propData, error: null };
-        } catch (err: any) {
-            return { data: null, error: err.message };
-        }
-    };
+            return propData;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+        },
+    });
+}
 
-    const updatePropertyFull = async (
-        id: string,
-        updates: Partial<Property>,
-        roomTypes: RoomType[],
-        seasonalPricing: SeasonalPricing[]
-    ) => {
-        try {
+export function useUpdatePropertyFull() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, updates, roomTypes, seasonalPricing }: {
+            id: string,
+            updates: Partial<Property>,
+            roomTypes: RoomType[],
+            seasonalPricing: SeasonalPricing[]
+        }) => {
             const { data: propData, error: propError } = await supabase
                 .from('properties')
                 .update({
@@ -203,7 +194,8 @@ export const useProperties = () => {
                     bathrooms: updates.bathrooms,
                     max_guests: updates.max_guests,
                     status: updates.status,
-                    amenities: updates.amenities
+                    amenities: updates.amenities,
+                    supplier_id: updates.supplier_id
                 })
                 .eq('id', id)
                 .select()
@@ -214,7 +206,6 @@ export const useProperties = () => {
             await supabase.from('room_types').delete().eq('property_id', id);
             if (roomTypes.length > 0) {
                 for (const rt of roomTypes) {
-                    // Strictly exclude seasonal_pricing from the room_types table insert
                     const { seasonal_pricing: rtSeasons, ...rtData } = rt;
                     const { data: rtRecord, error: rtError } = await supabase
                         .from('room_types')
@@ -246,44 +237,40 @@ export const useProperties = () => {
                 if (spError) throw spError;
             }
 
-            fetchProperties();
-            return { data: propData, error: null };
-        } catch (err: any) {
-            return { data: null, error: err.message };
-        }
-    };
+            return propData;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+            queryClient.invalidateQueries({ queryKey: ['property', data.id] });
+        },
+    });
+}
 
-    const updateProperty = async (id: string, updates: Partial<Property>) => {
-        try {
+export function useUpdateProperty() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, updates }: { id: string, updates: Partial<Property> }) => {
             const { data, error } = await supabase.from('properties').update(updates).eq('id', id).select().single();
             if (error) throw error;
-            fetchProperties();
-            return { data, error: null };
-        } catch (err: any) {
-            return { data: null, error: err.message };
-        }
-    };
+            return data;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+            queryClient.invalidateQueries({ queryKey: ['property', data.id] });
+        },
+    });
+}
 
-    const deleteProperty = async (id: string) => {
-        try {
+export function useDeleteProperty() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
             const { error } = await supabase.from('properties').delete().eq('id', id);
             if (error) throw error;
-            setProperties(properties.filter(p => p.id !== id));
-            return { error: null };
-        } catch (err: any) {
-            return { error: err.message };
-        }
-    };
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['properties'] });
+        },
+    });
+}
 
-    return {
-        properties,
-        loading,
-        error,
-        refetch: fetchProperties,
-        fetchPropertyDetails,
-        addProperty,
-        updateProperty,
-        updatePropertyFull,
-        deleteProperty
-    };
-};
