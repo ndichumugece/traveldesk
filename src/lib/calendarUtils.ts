@@ -6,9 +6,7 @@ import {
     eachDayOfInterval, 
     format, 
     isSameMonth, 
-    isSameDay, 
-    addMonths, 
-    subMonths 
+    isSameDay 
 } from 'date-fns';
 
 export interface CalendarDay {

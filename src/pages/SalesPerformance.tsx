@@ -6,7 +6,6 @@ import {
     Search
 } from 'lucide-react';
 import { useDetailedUserStats } from '../hooks/useDetailedUserStats';
-import { cn } from '../lib/utils';
 import { 
     AreaChart, 
     Area, 
@@ -227,7 +226,7 @@ export function SalesPerformance() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {filteredAgents.map((agent, index) => (
+                            {filteredAgents.map((agent) => (
                                 <tr key={agent.userId} className="hover:bg-slate-50/30 transition-colors group">
                                     <td className="py-6 px-10">
                                         <div className="flex items-center gap-4">

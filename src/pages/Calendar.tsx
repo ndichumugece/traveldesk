@@ -9,8 +9,6 @@ import {
     Calendar as CalendarIcon, 
     List, 
     Layers,
-    Search,
-    Filter,
     Loader2
 } from 'lucide-react';
 import { 
@@ -18,9 +16,7 @@ import {
     addMonths, 
     subMonths, 
     isSameDay, 
-    parseISO, 
-    startOfMonth, 
-    endOfMonth 
+    parseISO
 } from 'date-fns';
 import { createPortal } from 'react-dom';
 import { cn } from '../lib/utils';
@@ -40,7 +36,7 @@ export function Calendar() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week' | 'list'>('month');
     const [selectedBooking, setSelectedBooking] = useState<Document | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery] = useState('');
 
     const { data, isLoading, isFetching } = useDocuments('Booking');
     const documents = data?.pages.flatMap(page => page.data) || [];
@@ -82,7 +78,6 @@ export function Calendar() {
 
     const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
     const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-    const handleToday = () => setCurrentMonth(new Date());
 
     const filteredBookings = useMemo(() => {
         return documents.filter(doc => {

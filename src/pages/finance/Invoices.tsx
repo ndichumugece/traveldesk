@@ -12,7 +12,7 @@ export function Invoices() {
     const { data: invoices = [], isLoading, isFetching } = useInvoices();
     const markPaid = useMarkInvoicePaid();
     const deleteInvoice = useDeleteInvoice();
-    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+    const [searchTerm, setSearchTerm] = useQueryState<string>('search', '');
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Are you sure you want to delete this invoice?')) {

@@ -1,6 +1,4 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Calendar, ArrowUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface BookingsChartProps {
     data: any[];
@@ -8,7 +6,7 @@ interface BookingsChartProps {
     href?: string;
 }
 
-export function BookingsChart({ data, range = 'year', href }: BookingsChartProps) {
+export function BookingsChart({ data, range = 'year' }: BookingsChartProps) {
     const totalCount = data.reduce((sum, item) => sum + item.count, 0);
     const rangeLabel = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Current year';
 

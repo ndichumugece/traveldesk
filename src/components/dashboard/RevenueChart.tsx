@@ -1,6 +1,4 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, ArrowUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface ChartData {
     name: string;
@@ -13,7 +11,7 @@ interface RevenueChartProps {
     href?: string;
 }
 
-export function RevenueChart({ data, range = 'year', href }: RevenueChartProps) {
+export function RevenueChart({ data, range = 'year' }: RevenueChartProps) {
     const rangeLabel = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Current year';
     
     return (

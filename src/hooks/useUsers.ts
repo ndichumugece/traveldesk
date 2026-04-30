@@ -13,7 +13,7 @@ export interface UserProfile {
     lastActive: string;
 }
 
-const fetchUsers = async (agencyId: string | undefined) => {
+const fetchUsers = async () => {
     // Fetch actual profiles
     const { data: profiles, error: profileError } = await supabase
         .from('profiles')
@@ -70,7 +70,7 @@ export function useUsers() {
     const { agencyId } = useAuth();
     return useQuery({
         queryKey: ['users', agencyId],
-        queryFn: () => fetchUsers(agencyId),
+        queryFn: fetchUsers,
         enabled: !!agencyId,
     });
 }

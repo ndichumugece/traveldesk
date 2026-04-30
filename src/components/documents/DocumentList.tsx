@@ -2,10 +2,9 @@ import { useDocuments, useDeleteDocument } from '../../hooks/useDocuments';
 import type { Document } from '../../hooks/useDocuments';
 import { useQueryState } from '../../hooks/useQueryState';
 import { Plus, Search, FileText, Loader2, Trash2, Zap } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 export function DocumentList({ onCreate, onEdit, onSync, typeFilter }: { onCreate: () => void, onEdit: (doc: Document) => void, onSync?: (doc: Document) => void, typeFilter?: string | null }) {
-    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+    const [searchTerm, setSearchTerm] = useQueryState<string>('search', '');
     const { 
         data, 
         isLoading, 

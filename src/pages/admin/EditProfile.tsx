@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loader2, ArrowLeft, Save, User, Mail, Shield, Calendar, Clock, Trash2 } from 'lucide-react';
-import { useUsers } from '../../hooks/useUsers';
+import { useDeleteUserProfile } from '../../hooks/useUsers';
 
 interface UserProfile {
     id: string;
@@ -23,7 +23,7 @@ export function EditProfile() {
     const [success, setSuccess] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const { deleteUserProfile } = useUsers();
+    const { mutateAsync: deleteUserProfile } = useDeleteUserProfile();
 
     // Form state
     const [fullName, setFullName] = useState('');

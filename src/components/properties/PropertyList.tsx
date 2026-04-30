@@ -4,7 +4,7 @@ import { useProperties, type Property } from '../../hooks/useProperties';
 
 export function PropertyList({ onAdd, onEdit }: { onAdd: () => void, onEdit: (property: Property) => void }) {
     const { data: properties = [], isLoading, isFetching, error } = useProperties();
-    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+    const [searchTerm, setSearchTerm] = useQueryState<string>('search', '');
 
     const filteredProperties = properties.filter(prop => 
         prop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

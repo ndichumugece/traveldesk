@@ -1,6 +1,4 @@
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';
 import { cardVariants } from '../../lib/animations';
@@ -26,15 +24,8 @@ const variants = {
     slate: "bg-slate-50 text-slate-600"
 };
 
-const iconBackgrounds = {
-    orange: "bg-white/80",
-    emerald: "bg-white/80",
-    indigo: "bg-white/80",
-    blue: "bg-white/80",
-    slate: "bg-white"
-};
 
-export function MetricCard({ title, value, icon: Icon, trend, variant = 'slate', className, href }: MetricCardProps) {
+export function MetricCard({ title, value, trend, variant = 'slate', className }: MetricCardProps) {
     const shouldReduceMotion = useReducedMotion();
 
     return (

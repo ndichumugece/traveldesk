@@ -1,5 +1,5 @@
 import { useFinance } from '../../hooks/useFinance';
-import { Banknote, ArrowUpFromLine, ArrowDownToLine, Receipt, Loader2, TrendingUp } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, Receipt, Loader2, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';

@@ -8,7 +8,7 @@ import { containerVariants, listItemVariants } from '../../lib/animations';
 
 export function Expenses() {
     const { data: expenses = [], isLoading, isFetching } = useExpenses();
-    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+    const [searchTerm, setSearchTerm] = useQueryState<string>('search', '');
 
     const filteredExpenses = expenses.filter(exp => 
         exp.supplier_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

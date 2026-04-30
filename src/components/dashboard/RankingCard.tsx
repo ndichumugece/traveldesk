@@ -1,4 +1,4 @@
-import { Wallet, Users, Award, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { Users, Award, ArrowUpRight, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { motion, useReducedMotion } from 'framer-motion';

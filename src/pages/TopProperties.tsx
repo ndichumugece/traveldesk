@@ -8,11 +8,6 @@ import {
 import { usePropertyStats } from '../hooks/usePropertyStats';
 import { cn } from '../lib/utils';
 import { 
-    BarChart, 
-    Bar, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
     Tooltip, 
     ResponsiveContainer,
     Cell,

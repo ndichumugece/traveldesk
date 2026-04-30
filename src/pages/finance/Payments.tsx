@@ -1,6 +1,5 @@
 import { usePayments } from '../../hooks/useFinance';
 import { ArrowDownToLine, Search, Plus, Calendar, User, Wallet, Loader2 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { useQueryState } from '../../hooks/useQueryState';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -8,7 +7,7 @@ import { containerVariants, listItemVariants } from '../../lib/animations';
 
 export function Payments() {
     const { data: payments = [], isLoading, isFetching } = usePayments();
-    const [searchTerm, setSearchTerm] = useQueryState('search', '');
+    const [searchTerm, setSearchTerm] = useQueryState<string>('search', '');
 
     const filteredPayments = payments.filter(pay => 
         pay.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -15,13 +15,10 @@ import {
     EyeOff,
     Shield,
     Smartphone,
-    Monitor,
-    LogOut,
     ChevronRight,
     Activity,
     CreditCard,
     Bell,
-    ExternalLink,
     MapPin,
     Clock,
     X,
@@ -61,7 +58,7 @@ const SuccessBadge = ({ message }: { message: string }) => (
 // --- Page ---
 
 export function UserProfile() {
-    const { user, profile, refreshProfile } = useAuth();
+    const { user, refreshProfile } = useAuth();
     const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'activity'>('profile');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

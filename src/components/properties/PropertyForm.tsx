@@ -6,6 +6,7 @@ import {
     useUpdatePropertyFull, 
     type RoomType, 
     type OccupancyType, 
+    type RateType,
     type SeasonalPricing, 
     type Property 
 } from '../../hooks/useProperties';
@@ -129,7 +130,7 @@ export function PropertyForm({ onDiscard, existingProperty }: PropertyFormProps)
                 bedrooms: Number(bedrooms),
                 bathrooms: Number(bathrooms),
                 max_guests: Number(maxGuests),
-                supplier_id: supplierId || null,
+                supplier_id: supplierId || undefined,
                 status: 'active' as const, amenities: amenities.split(',').map(a => a.trim()).filter(Boolean)
             };
 

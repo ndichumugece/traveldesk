@@ -81,7 +81,7 @@ export function TransportForm({ onDiscard, existingTransport }: TransportFormPro
             price_per_way: Number(pricePerWay),
             capacity: Number(capacity),
             status,
-            supplier_id: category === 'Road' ? (supplierId || null) : null
+            supplier_id: category === 'Road' ? (supplierId || undefined) : undefined
         };
 
         const res = existingTransport

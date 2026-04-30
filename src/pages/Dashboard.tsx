@@ -1,4 +1,4 @@
-import { DollarSign, Calendar, TrendingUp, Loader2, Wallet, Users, Award } from 'lucide-react';
+import { DollarSign, Calendar, Loader2, Wallet } from 'lucide-react';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { RevenueChart } from '../components/dashboard/RevenueChart';
 import { BookingsChart } from '../components/dashboard/BookingsChart';
@@ -10,7 +10,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { containerVariants } from '../lib/animations';
 
 export function Dashboard() {
-    const { stats, revenueData, recentActivity, userName, loading, isFetching, timeRange, setTimeRange } = useDashboardStats();
+    const { stats, revenueData, userName, loading, isFetching, timeRange, setTimeRange } = useDashboardStats();
     const { isAdmin } = useAuth();
 
     const firstName = userName?.split(' ')[0] || 'Admin';
@@ -103,21 +103,21 @@ export function Dashboard() {
 
             {/* Graphs Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RevenueChart data={revenueData} range={timeRange} href="/invoice" />
-                <BookingsChart data={revenueData} range={timeRange} href="/calendar" />
+                <RevenueChart data={revenueData || []} range={timeRange} href="/invoice" />
+                <BookingsChart data={revenueData || []} range={timeRange} href="/calendar" />
             </div>
 
             {/* Rankings Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <RankingCard 
                     title={`Top Properties (${timeRange})`} 
-                    items={stats.topProperties.slice(0, 3)} 
+                    items={stats?.topProperties?.slice(0, 3) || []} 
                     type="properties" 
                     href="/top-properties"
                 />
                 <RankingCard 
                     title={`Top Clients (${timeRange})`} 
-                    items={stats.topClients.slice(0, 3)} 
+                    items={stats?.topClients?.slice(0, 3) || []} 
                     type="clients" 
                     href="/clients"
                 />
@@ -129,7 +129,7 @@ export function Dashboard() {
                     <UserSalesLeaderboard />
                     <RankingCard 
                         title={`Lead Sources (${timeRange})`} 
-                        items={stats.leadSources.slice(0, 3)} 
+                        items={stats?.leadSources?.slice(0, 3) || []} 
                         type="lead-sources" 
                         href="/lead-sources"
                     />

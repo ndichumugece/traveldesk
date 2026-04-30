@@ -1,4 +1,4 @@
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     Building2,
@@ -6,7 +6,6 @@ import {
     Users,
     LogOut,
     ChevronDown,
-    ChevronUp,
     FolderOpen,
     PanelLeftClose,
     PanelLeftOpen,
@@ -29,7 +28,6 @@ import { useAuth } from '../../lib/AuthContext';
 import { cn } from '../../lib/utils';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { buttonClick } from '../../lib/animations';
 
 type NavItem = {
     name: string;

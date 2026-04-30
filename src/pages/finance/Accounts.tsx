@@ -1,5 +1,5 @@
 import { useFinance } from '../../hooks/useFinance';
-import { Wallet, Plus, ArrowRightLeft, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Wallet, Plus, Loader2, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { useState } from 'react';

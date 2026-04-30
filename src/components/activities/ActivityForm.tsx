@@ -35,7 +35,7 @@ export function ActivityForm({ onDiscard, existingActivity }: ActivityFormProps)
             location,
             price: Number(price),
             status,
-            supplier_id: supplierId || null
+            supplier_id: supplierId || undefined
         };
 
         const res = existingActivity

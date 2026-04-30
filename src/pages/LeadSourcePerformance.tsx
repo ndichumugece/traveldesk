@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     ChevronLeft, 
-    Download, 
     Search, 
     Loader2
 } from 'lucide-react';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { cn } from '../lib/utils';
 import { 
     ResponsiveContainer,
     Cell,
@@ -36,7 +34,7 @@ export function LeadSourcePerformance() {
         );
     }
 
-    const leadSources = stats.leadSources || [];
+    const leadSources = stats?.leadSources || [];
     const filteredSources = leadSources.filter(source => 
         source.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -214,7 +212,7 @@ export function LeadSourcePerformance() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {filteredSources.map((source, index) => (
+                            {filteredSources.map((source) => (
                                 <tr key={source.name} className="hover:bg-slate-50/30 transition-colors group">
                                     <td className="py-6 px-10">
                                         <div className="flex items-center gap-4">

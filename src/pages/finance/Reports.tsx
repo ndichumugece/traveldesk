@@ -1,7 +1,5 @@
 import { useFinance } from '../../hooks/useFinance';
-import { FileText, TrendingUp, TrendingDown, PieChart, BarChart3, Loader2, Download } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import { format } from 'date-fns';
+import { FileText, TrendingUp, PieChart, BarChart3, Loader2, Download } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { containerVariants, listItemVariants, cardVariants } from '../../lib/animations';
 

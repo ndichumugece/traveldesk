@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { 
     ArrowLeft, Save, Plus, Trash2, Loader2, Download, Eye, 
     Check, X, Car, Train, Plane, Building2, Home, Layout, 
-    Zap, FileText, RefreshCw 
+    FileText, RefreshCw 
 } from 'lucide-react';
-import { useCreateDocument, useUpdateDocument, useDeleteDocument, useDocumentDetails } from '../../hooks/useDocuments';
+import { useCreateDocument, useUpdateDocument, useDocumentDetails } from '../../hooks/useDocuments';
 import type { Document } from '../../hooks/useDocuments';
 import { pdf } from '@react-pdf/renderer';
 import { DocumentPDF } from '../../lib/pdfEngine/DocumentPDF';
@@ -26,10 +26,10 @@ const TRANSPORT_MODES = ['Self Drive', 'Train', 'Flying', 'Road Package'];
 
 // Removed hardcoded INCLUSION_OPTIONS to use dynamic data from database
 
+
 export function DocumentForm({ onDiscard, onSync, initialDoc, typeFilter }: { onDiscard: () => void, onSync?: (doc: Document) => void, initialDoc?: Document | null, typeFilter?: string | null }) {
     const createMutation = useCreateDocument();
     const updateMutation = useUpdateDocument();
-    const deleteMutation = useDeleteDocument();
     
     // We only use this for initial load if needed, but we mostly rely on initialDoc props
     const { data: fullDoc, isLoading: fullDocLoading } = useDocumentDetails(initialDoc?.id || (initialDoc as any)?.syncSourceId || null);
@@ -238,17 +238,6 @@ export function DocumentForm({ onDiscard, onSync, initialDoc, typeFilter }: { on
 
     const subtotal = lineItems.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
 
-    const handleDelete = async () => {
-        if (!initialDoc?.id) return;
-        if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-            try {
-                await deleteMutation.mutateAsync(initialDoc.id);
-                onDiscard();
-            } catch (err: any) {
-                alert('Error deleting document: ' + (err.message || 'Unknown error'));
-            }
-        }
-    };
 
     const addLineItem = () => {
         setLineItems([...lineItems, { id: Date.now(), description: '', quantity: 1, unitPrice: 0, costPrice: 0 }]);
@@ -466,7 +455,7 @@ export function DocumentForm({ onDiscard, onSync, initialDoc, typeFilter }: { on
                         </button>
                         {onSync && (
                             <button
-                                onClick={onSync}
+                                onClick={() => onSync(initialDoc!)}
                                 className="p-2.5 bg-brand-50 text-brand-600 hover:bg-brand-100 rounded-xl transition-all border border-brand-100 shadow-sm"
                                 title="Sync from original document"
                             >
@@ -928,7 +917,6 @@ export function DocumentForm({ onDiscard, onSync, initialDoc, typeFilter }: { on
                                 value={termsAndConditions}
                                 onChange={setTermsAndConditions}
                                 placeholder="Enter terms and conditions for this quotation..."
-                                minHeight="150px"
                             />
                         </div>
                     </div>
@@ -2112,7 +2100,6 @@ export function DocumentForm({ onDiscard, onSync, initialDoc, typeFilter }: { on
                                         value={termsAndConditions}
                                         onChange={setTermsAndConditions}
                                         placeholder="Enter terms and conditions..."
-                                        minHeight="120px"
                                     />
                                 </div>
                             </div>
